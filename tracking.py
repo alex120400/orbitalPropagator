@@ -35,3 +35,12 @@ class TelescopeWrapper():
         minAltitude = 30
         self.telescope.Action("sat:startalt", minAltitude)
         self.telescope.Action("sat:start", "")
+
+
+if __name__ == "__main__":
+    import os
+    tel = TelescopeWrapper()
+
+    tel.connect_telescope()
+
+    tel.start_track(os.path.join("ephemerides", "2025Nov25__13_10_00", "ASATrackingData_STARLINK-1306.eph"))
