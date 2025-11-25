@@ -1,0 +1,9 @@
+http://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=tle # 100Brightest
+http://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle # Stations
+http://celestrak.org/NORAD/elements/gp.php?GROUP=cubesat&FORMAT=tle # Cubesat
+http://celestrak.org/NORAD/elements/gp.php?GROUP=weather&FORMAT=tle # Weather
+http://celestrak.org/NORAD/elements/gp.php?GROUP=geo&FORMAT=tle # Geo
+http://celestrak.org/NORAD/elements/gp.php?GROUP=gnss&FORMAT=tle # Navigation
+http://celestrak.org/NORAD/elements/gp.php?GROUP=iridium&FORMAT=tle # Iridium
+http://celestrak.org/NORAD/elements/gp.php?GROUP=globalstar&FORMAT=tle # Globalstar
+http://celestrak.org/NORAD/elements/gp.php?GROUP=orbcomm&FORMAT=tle # Orbcom

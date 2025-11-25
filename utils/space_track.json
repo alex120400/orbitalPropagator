@@ -1,0 +1,9 @@
+{
+    "credentials": {
+      "username": "alexander120400@gmail.com",
+      "password": ".7eTQDE7p47*2*U"
+    },
+    "queries": {
+      "most_recent_LEO_query": "https://www.space-track.org/basicspacedata/query/class/tle_latest/MEAN_MOTION/11.25--17/orderby/EPOCH%20desc/limit/100/format/3le/emptyresult/show"
+    }
+}
