@@ -43,4 +43,8 @@ if __name__ == "__main__":
 
     tel.connect_telescope()
 
-    tel.start_track(os.path.join("ephemerides", "2025Nov25__13_10_00", "ASATrackingData_STARLINK-1306.eph"))
+    try:
+        tel.start_track(os.path.join("ephemerides", "2025Nov25__13_34_00", "ASATrackingData_SJ-11-01.eph"))
+    except Exception as e:
+        print(str(e))
+        tel.disconnect_telescope()
