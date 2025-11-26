@@ -109,11 +109,11 @@ class APP(tk.Tk):
         self.geometry(self.WIN_SIZE_POS)
         self.iconbitmap(self.icon)
 
-        # tab like structure will be used on top, below sensor status field
+        # tab like structure will be used on top, below sensor tel_status field
         self.master_tab_holder_frame.pack(fill='both', expand=True, padx=self.CONTAINER_PADX, pady=self.CONTAINER_PADY)
         self.master_tab_holder.pack(fill='both', expand=True, padx=self.WIDGET_PADX, pady=self.WIDGET_PADY)
 
-        # add tabs and status frame
+        # add tabs and tel_status frame
         self._create_preprocessing_tab()
         self._create_camera_tab()
         self._create_tracking_tab()
@@ -343,6 +343,8 @@ class APP(tk.Tk):
         self.tracking_status_label.grid(row=1, column=1)
         ttk.Button(self.telescope_frame, text="Request Telescope Status", command=self._get_telescope_status) \
             .grid(row=2, column=0)
+        ttk.Button(self.telescope_frame, text="Request Satellite Status", command=self._get_satellite_status) \
+            .grid(row=3, column=0)
 
 
         # layout
@@ -391,7 +393,12 @@ class APP(tk.Tk):
             mbox.showerror(title="Error", message="Ephemeris File not configured correctly!")
 
     def _get_telescope_status(self):
-        err_msg = self.telescope.get_status()
+        err_msg = self.telescope.get_telescope_status()
+        if err_msg is not None:
+            mbox.showerror(title="Error", message=err_msg)
+
+    def _get_satellite_status(self):
+        err_msg = self.telescope.get_satellite_status()
         if err_msg is not None:
             mbox.showerror(title="Error", message=err_msg)
 
