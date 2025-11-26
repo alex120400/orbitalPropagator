@@ -9,9 +9,12 @@ from skyfield.api import wgs84 as sky_wgs84
 import skyfield.api as sky
 from skyfield.iokit import parse_tle_file as sky_parse_tle_file
 
-from utils.configManager import STATION_CFG, SPACE_TRACK_CFG, LEO_TLE_FILE, TLE_DATA_PATH, OGS_TLE_FILE
-
-minimum_elevation = 26 # deg, minimum elevation for a spacecraft to be visible
+from utils.configManager import (STATION_CFG,
+                                 SPACE_TRACK_CFG,
+                                 LEO_TLE_FILE,
+                                 TLE_DATA_PATH,
+                                 OGS_TLE_FILE,
+                                 MIN_ALTITUDE_ElEVATION)
 
 
 def load_StationLatLongAlt() -> (float, float, float):
@@ -202,7 +205,7 @@ def create_satellite_data_list(startTime:sky.Time, durationMin:int, ogs_flag:boo
         noradID = sat.model.satnum_str + sat.model.classification
         height = (sat.model.a - 1) * sat.model.radiusearthkm # a is given in earth_radii
 
-        t, events = sat.find_events(gnd_station, t0, t1, altitude_degrees=minimum_elevation) #
+        t, events = sat.find_events(gnd_station, t0, t1, altitude_degrees=MIN_ALTITUDE_ElEVATION) #
         # events[i] = 0 — Satellite rose above altitude_degrees.
         # events[i] = 1 — Satellite culminated and started to descend again.
         # events[i] = 2 — Satellite fell below altitude_degrees.
@@ -250,29 +253,15 @@ def create_satellite_data_list(startTime:sky.Time, durationMin:int, ogs_flag:boo
 if __name__ == "__main__":
     ts = sky_load.timescale() # needed many times
 
-    use_ogs_tle_flag = True # set tle source
-    if use_ogs_tle_flag:
-        print(f"OGS sources are {sky_load.days_old(OGS_TLE_FILE)} days old")
-    else:
-        print(f"LEO sources are {sky_load.days_old(LEO_TLE_FILE)} days old")
-
     sat_data_list, sat_dict = create_satellite_data_list(ts.now(), durationMin=90, ogs_flag=True)
     print(sat_dict)
 
-    # create satellite objects from most recent TLE data
-    if use_ogs_tle_flag:
-        satellites = []
-        for ogs_tle_file in os.listdir(os.path.join(TLE_DATA_PATH, "ogs_tle")):
-            if ogs_tle_file.endswith(".tle"):
-                with sky_load.open(os.path.join(TLE_DATA_PATH, "ogs_tle", ogs_tle_file)) as f:
-                    satellites += list(sky_parse_tle_file(f, ts))
-        satellites = np.array(satellites)
-    else:
-        with sky_load.open(LEO_TLE_FILE) as f:
-            satellites = np.array(list(sky_parse_tle_file(f, ts)))
+    # create satellite objects
+    satellites = []
+    for sat_TLEs in sat_dict.values():
+        satellites.append(sky.EarthSatellite(sat_TLEs[1].rstrip("\n"), sat_TLEs[2].rstrip("\n"), sat_TLEs[0][2:], ts))
 
     print('Loaded', len(satellites), 'satellites')
-
 
     # create observer station as object
     stat_lat, stat_long, stat_alt = load_StationLatLongAlt()
@@ -301,17 +290,7 @@ if __name__ == "__main__":
         topocentric = vect_diff.at(times)
         alt, az, distance = topocentric.altaz()
 
-        args = np.argwhere(alt.degrees > minimum_elevation)
+        args = np.argwhere(alt.degrees > MIN_ALTITUDE_ElEVATION)
         if len(args) > 0:
             rise_time_ar[idx] = args.flatten()[0] * 0.25
-
-
-
-
-
-    print("hihi")
-
-
-
-
 

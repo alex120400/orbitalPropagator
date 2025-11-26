@@ -32,25 +32,17 @@ class MissionPlanRunner:
                             sat_name = line[2:].strip("\n") # remove "0 " and "\n"
 
                             # run now mission plan
-                            print("Load the Mission Plan.")
                             engine.loadMissionPlanFromFile(mission_plan_path)
 
-                            print("Prepare to execute statements.")
                             engine.prepareMissionPlan()
 
-                            print("Run to the 'Python-Input' label.")
                             engine.executeUntilApiLabel("Python-Input")
-
-                            print("assign satellite name, watchwindow and startTime")
 
                             engine.setExpressionString("SpaceCraftName", sat_name)
                             engine.setExpressionString("startTime_String", startTimeUTCString)
                             engine.assignExpression("watchWindow_Timespan", f"TIMESPAN({durationMin} minutes)")
 
-                            print("Execute the remaining Mission Plan.")
                             engine.executeRemainingStatements()
-
-                            print("Clean up the Mission Plan.")
                             engine.cleanupMissionPlan()
                             self.missionplan_success_flag = True
 

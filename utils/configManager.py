@@ -28,3 +28,4 @@ SPACE_TRACK_CFG = os.path.join(UTILS_DIR, "space_track.json")
 
 MISSION_PLAN_PATH = os.path.join(BASE_DIR, "missionplans")
 EPHEMERIDES_PATH = os.path.join(BASE_DIR, "ephemerides")
+MIN_ALTITUDE_ElEVATION = 26
