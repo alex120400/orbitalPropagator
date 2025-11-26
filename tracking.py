@@ -27,32 +27,32 @@ class TelescopeWrapper():
 
         # Serialize the list of lines to JSON
         lines_list_serialized = json.dumps(lines)
-        print(lines_list_serialized)
+        #print(lines_list_serialized)
 
 
-        for line in lines:
-            if line.startswith("#"):
-                continue
-            else:
-                print(line)
-                print(f"MJD: {line[0:0+14]}, RA: {line[15:15+12]}, DE: {line[27:27+13]}, AZI: {line[60:60+12]}, ELE: {line[72:72+12]}")
+        # for line in lines:
+        #     if line.startswith("#"):
+        #         continue
+        #     else:
+        #         print(line)
+        #         print(f"MJD: {line[0:0+14]}, RA: {line[15:15+12]}, DE: {line[27:27+13]}, AZI: {line[60:60+12]}, ELE: {line[72:72+12]}")
         # Send the serialized data to the telescope
-        #self.telescope.Action("sat:ephlines", lines_list_serialized)
+        self.telescope.Action("sat:ephlines", lines_list_serialized)
 
         # provide telescope with min elevation (=altitude) and start track
         minAltitude = 30
-        #self.telescope.Action("sat:startalt", minAltitude)
-        #self.telescope.Action("sat:start", "")
+        self.telescope.Action("sat:startalt", minAltitude)
+        self.telescope.Action("sat:start", "")
 
 
 if __name__ == "__main__":
     import os
     tel = TelescopeWrapper()
 
-    #tel.connect_telescope()
+    tel.connect_telescope()
 
     try:
-        tel.start_track(os.path.join("ephemerides", "2025Nov25__13_34_00", "ASATrackingData_SJ-11-01.eph"))
+        tel.start_track(os.path.join("ephemerides", "2025Nov26__12_43_00", "ASATrackingData_STARLINK-1510.eph"))
     except Exception as e:
         print(str(e))
-        #tel.disconnect_telescope()
+        tel.disconnect_telescope()
