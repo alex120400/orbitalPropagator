@@ -1579,17 +1579,29 @@
 	Variable mjdUTC = sc.EpochUTC.ToDays + 29999.5; // spacecraft default ref:1941 to asa ref: 1858
 	Variable elevation = gs.Elevation(sc);
 	Variable azimuth = gs.Azimuth(sc);
+	Variable RA = sc.RA / 180 * Constants.Pi;
+	Variable DE = sc.DEC / 180 * Constants.Pi;
 	Variable emptyVar = 0.0;
-	Report mjdUTC.Format("%5.8f")," ",emptyVar.Format("%1.9f")," ",emptyVar.Format("%2.10f")," ",emptyVar.Format("%2.7f")," ",emptyVar.Format("%2.7f")," ", azimuth.Format("%-3.7f"), " ", elevation.Format("%-3.7f"), " " to ASATrackingData without headers without pad;
+	Report mjdUTC.Format("%14.8f"), " ", RA.Format("%12.9f"),DE.Format("%13.9f"),"  000.0000  000.0000", azimuth.Format("%12.6f"), elevation.Format("%12.6f") to ASATrackingData without headers without pad;
 EndProcedure;
 
 
 Define Procedure ReportToASAHeader(String SpaceCraftName, ReportInterface ASATrackingData);
 	
-	Report "#  Object	: ", SpaceCraftName to ASATrackingData without headers without pad;
-	Report "#  Created	: ", SystemTime().ConvertToCalendarDate()  to ASATrackingData without headers without pad;
-	Report "#   Epoch	   RA	       DE	  VRA	    VDE	       AZI	    ELE" to ASATrackingData without headers without pad;
-	Report "#    mjd	   rad	       rad	     arcs/sec	       deg	    deg" to ASATrackingData without headers without pad;
+	Report "#   Ephemerides" to ASATrackingData without headers without pad;
+	Report "#   -----------" to ASATrackingData without headers without pad;
+	Report "#   Created    : ", SystemTime().ConvertToCalendarDate()  to ASATrackingData without headers without pad;
+	Report "#" to ASATrackingData without headers without pad;
+	Report "#   Object     : ", SpaceCraftName to ASATrackingData without headers without pad;              
+	Report "#" to ASATrackingData without headers without pad;
+	Report "#   (topocentric, True aquator And equinox; VRA Is sky motion Not coordinate motion, i.e. w/o cos(DEC))" to ASATrackingData without headers without pad;
+	Report "#" to ASATrackingData without headers without pad;
+	Report "#" to ASATrackingData without headers without pad;
+	Report "#" to ASATrackingData without headers without pad;
+	Report "#" to ASATrackingData without headers without pad;
+	Report "#" to ASATrackingData without headers without pad;
+	Report "#   Epoch          RA           DE           VRA       VDE      AZI         ELE" to ASATrackingData without headers without pad;
+	Report "#    mjd           rad          rad             arcs/sec        deg         deg" to ASATrackingData without headers without pad;
 	Report "#" to ASATrackingData without headers without pad;
 EndProcedure;
 ]]></FreeFormScript>
@@ -1677,17 +1689,29 @@ End;]]></FreeFormScript>
 	Variable mjdUTC = sc.EpochUTC.ToDays + 29999.5; // spacecraft default ref:1941 to asa ref: 1858
 	Variable elevation = gs.Elevation(sc);
 	Variable azimuth = gs.Azimuth(sc);
+	Variable RA = sc.RA / 180 * Constants.Pi;
+	Variable DE = sc.DEC / 180 * Constants.Pi;
 	Variable emptyVar = 0.0;
-	Report mjdUTC.Format("%5.8f")," ",emptyVar.Format("%1.9f")," ",emptyVar.Format("%2.10f")," ",emptyVar.Format("%2.7f")," ",emptyVar.Format("%2.7f")," ", azimuth.Format("%-3.7f"), " ", elevation.Format("%-3.7f"), " " to ASATrackingData without headers without pad;
+	Report mjdUTC.Format("%14.8f"), " ", RA.Format("%12.9f"),DE.Format("%13.9f"),"  000.0000  000.0000", azimuth.Format("%12.6f"), elevation.Format("%12.6f") to ASATrackingData without headers without pad;
 EndProcedure;
 
 
 Define Procedure ReportToASAHeader(String SpaceCraftName, ReportInterface ASATrackingData);
 	
-	Report "#  Object	: ", SpaceCraftName to ASATrackingData without headers without pad;
-	Report "#  Created	: ", SystemTime().ConvertToCalendarDate()  to ASATrackingData without headers without pad;
-	Report "#   Epoch	   RA	       DE	  VRA	    VDE	       AZI	    ELE" to ASATrackingData without headers without pad;
-	Report "#    mjd	   rad	       rad	     arcs/sec	       deg	    deg" to ASATrackingData without headers without pad;
+	Report "#   Ephemerides" to ASATrackingData without headers without pad;
+	Report "#   -----------" to ASATrackingData without headers without pad;
+	Report "#   Created    : ", SystemTime().ConvertToCalendarDate()  to ASATrackingData without headers without pad;
+	Report "#" to ASATrackingData without headers without pad;
+	Report "#   Object     : ", SpaceCraftName to ASATrackingData without headers without pad;              
+	Report "#" to ASATrackingData without headers without pad;
+	Report "#   (topocentric, True aquator And equinox; VRA Is sky motion Not coordinate motion, i.e. w/o cos(DEC))" to ASATrackingData without headers without pad;
+	Report "#" to ASATrackingData without headers without pad;
+	Report "#" to ASATrackingData without headers without pad;
+	Report "#" to ASATrackingData without headers without pad;
+	Report "#" to ASATrackingData without headers without pad;
+	Report "#" to ASATrackingData without headers without pad;
+	Report "#   Epoch          RA           DE           VRA       VDE      AZI         ELE" to ASATrackingData without headers without pad;
+	Report "#    mjd           rad          rad             arcs/sec        deg         deg" to ASATrackingData without headers without pad;
 	Report "#" to ASATrackingData without headers without pad;
 EndProcedure;
 
