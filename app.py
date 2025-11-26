@@ -3,13 +3,14 @@ import shutil
 try:
     # import sys
     import os
-    # import threading
+    import threading
     import tkinter as tk
     from tkinter import messagebox as mbox
     from tkinter import filedialog
     from tkinter import scrolledtext as st
     import tkinter.ttk as ttk
     import numpy as np
+    from time import sleep
 
     # import scipy.fft as fft
     # from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
@@ -74,10 +75,13 @@ class APP(tk.Tk):
         self.tel_conn_status_label = None # will be tk.Label (tk instead of ttk because coloring is easier)
         self.telescope = tracking.TelescopeWrapper()
         self.tracking_status_label = None # will be tk.Label (tk instead of ttk because coloring is easier)
+        self.current_RA = tk.StringVar(value="Not connected")
+        self.current_DE = tk.StringVar(value="Not connected")
 
-        # # threads
+
+        # threads
         # self.timing_thread = None  # will be a new thread each time there is a new measurement started
-        # self.measuring_thread = None  # will be a new thread each time there is a new measurement started
+        self.tracking_thread = None  # will be a new thread each time there is a new track started
         # self.converting_thread = None  # will be a new thread each time there is a new measurement started
 
         # # plotting
@@ -319,7 +323,7 @@ class APP(tk.Tk):
         pass
 
     def _create_tracking_tab(self):
-        #self.tracking_tab.columnconfigure(0, weight=1)
+        self.tracking_tab.columnconfigure(0, weight=1)
         self.tracking_tab.rowconfigure(0, weight=0)
 
         # will have two zones: eph selection and telescope
@@ -329,10 +333,14 @@ class APP(tk.Tk):
             .pack(padx=self.WIDGET_PADX, pady=self.WIDGET_PADY, expand=True, fill='x')
         self.eph_preview = st.ScrolledText(self.eph_frame, width=90, height=20)
         self.eph_preview.pack(padx=self.WIDGET_PADX, pady=self.WIDGET_PADY, fill='x')
-        self.eph_frame.grid(row=0, column=0, columnspan=2)
+        self.eph_frame.grid(row=0, column=0, columnspan=1)
 
         # tracking & telescope options
         self.telescope_frame = ttk.LabelFrame(self.tracking_tab, text="Telescope setup & tracking")
+        self.telescope_frame.columnconfigure(0, weight=1)
+        self.telescope_frame.columnconfigure(1, weight=1)
+        self.telescope_frame.columnconfigure(3, weight=1)
+        self.telescope_frame.columnconfigure(4, weight=1)
         ttk.Button(self.telescope_frame, text="Toggle telescope connection", command=self._toggle_telescope_conn) \
             .grid(row=0, column=0)
         self.tel_conn_status_label = tk.Label(self.telescope_frame, text="Disconnected", bg="red")
@@ -341,11 +349,16 @@ class APP(tk.Tk):
             .grid(row=1, column=0)
         self.tracking_status_label = tk.Label(self.telescope_frame, text="Not Tracking", bg="red")
         self.tracking_status_label.grid(row=1, column=1)
-        ttk.Button(self.telescope_frame, text="Request Telescope Status", command=self._get_telescope_status) \
-            .grid(row=2, column=0)
-        ttk.Button(self.telescope_frame, text="Request Satellite Status", command=self._get_satellite_status) \
-            .grid(row=3, column=0)
 
+        ttk.Label(self.telescope_frame, text="Current RA (rad):").grid(row=0, column=3)
+        ttk.Label(self.telescope_frame, text="Current DE (rad):").grid(row=1, column=3)
+        ttk.Label(self.telescope_frame, textvariable=self.current_RA).grid(row=0, column=4)
+        ttk.Label(self.telescope_frame, textvariable=self.current_DE).grid(row=1, column=4)
+
+        for widget in self.telescope_frame.winfo_children():
+            widget.grid_configure(padx=self.WIDGET_PADX, pady=self.WIDGET_PADY, sticky="nesw")
+        ttk.Separator(self.telescope_frame, orient="vertical").grid(row=0, rowspan=2, column=2, sticky="ns",
+                                                                    padx=self.WIDGET_PADX, pady=self.WIDGET_PADY)
 
         # layout
         for widget in self.tracking_tab.winfo_children():
@@ -376,35 +389,88 @@ class APP(tk.Tk):
         if err_msg is None:
             if self.telescope.connected_flag:
                 self.tel_conn_status_label.config(text="Connected", bg="green")
+                self.current_RA.set("Waiting for Track Request")
+                self.current_DE.set("Waiting for Track Request")
             else:
                 self.tel_conn_status_label.config(text="Disconnected", bg="red")
+                self.current_RA.set("Not connected")
+                self.current_DE.set("Not connected")
         else:
             mbox.showerror(title="Error", message=err_msg)
 
     def _start_tracking(self):
-        if self.eph_file is not None and os.path.exists(self.eph_file):
+        if self.tracking_thread is not None and self.tracking_thread.is_alive():
+            # measurement is ongoing, cannot start new one
+            mbox.showerror("Error", "Wait for current tracking to finish!")
+            return
+
+        if self.telescope.connected_flag and self.eph_file is not None and os.path.exists(self.eph_file):
             err_msg = self.telescope.start_track(self.eph_file)
 
             if err_msg is not None:
                 mbox.showerror(title="Error", message=err_msg)
             else:
-                self.tracking_status_label.config(text="Tracking", bg="green")
+                self.tracking_status_label.config(text="Slewing to Start Position", bg="yellow")
+                # start update thread, telescope sets tracking_flag
+                self.tracking_thread = self._start_a_thread(self._update_status)
         else:
             mbox.showerror(title="Error", message="Ephemeris File not configured correctly!")
 
-    def _get_telescope_status(self):
-        err_msg = self.telescope.get_telescope_status()
-        if err_msg is not None:
-            mbox.showerror(title="Error", message=err_msg)
+    def _update_status(self):
+        # only called internally by a thread while tracking
+        tracking_has_not_started_yet = True
+        while self.telescope.tracking_flag: # is set by telescope
+            err_msg = self.telescope.update_status()
+            if err_msg is not None:
+                self.telescope.tracking_flag = False
+                mbox.showerror(title="Error", message=err_msg)
+                return
+            elif tracking_has_not_started_yet:
+                if self.telescope.slewing_bit == 1:
+                    self.tracking_status_label.config(text="Slewing to Start Position", bg="yellow")
+                    self.current_RA.set(f"{self.telescope.RA_rad:.8f}")
+                    self.current_DE.set(f"{self.telescope.DE_rad:.8f}")
+                elif self.telescope.slewing_bit == 0 and self.telescope.tracking_bit == 0:
+                    self.tracking_status_label.config(text="Waiting in Start Position", bg="yellow")
+                elif self.telescope.tracking_bit == 1:
+                    tracking_has_not_started_yet = False # started tracking
+                    self.tracking_status_label.config(text="Tracking", bg="green")
+                    self.current_RA.set(f"{self.telescope.RA_rad:.8f}")
+                    self.current_DE.set(f"{self.telescope.DE_rad:.8f}")
+                else:
+                    print("This should never be printed")
+            else: # have started tracking already
+                self.current_RA.set(f"{self.telescope.RA_rad:.8f}")
+                self.current_DE.set(f"{self.telescope.DE_rad:.8f}")
+                if self.telescope.tracking_bit != 1: # stopped tracking
+                    self.tracking_status_label.config(text="Finished Tracking", bg="yellow")
+                    self.telescope.tracking_flag = False
 
-    def _get_satellite_status(self):
-        err_msg = self.telescope.get_satellite_status()
-        if err_msg is not None:
-            mbox.showerror(title="Error", message=err_msg)
+            sleep(1)
+
 
 
     def _create_postprocessing_tab(self):
         pass
+
+    @staticmethod
+    def _start_a_thread(target_function, args=None):
+        """ function that creates threads for relevant tasks
+
+        :param target_function: function that is performed by the thread
+        :type target_function: (...) -> object
+
+        :param args: arguments given to target function as a Tuple[arg1, arg2, ...]
+        :type args. Tuple
+        """
+        if args is None:
+            new_thread = threading.Thread(target=target_function, daemon=True)
+            new_thread.start()
+        else:
+            new_thread = threading.Thread(target=target_function, daemon=True, args=args)
+            new_thread.start()
+
+        return new_thread
 
 
 if __name__ == "__main__":

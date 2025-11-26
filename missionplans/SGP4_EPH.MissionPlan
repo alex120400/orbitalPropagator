@@ -1579,8 +1579,8 @@
 	Variable mjdUTC = sc.EpochUTC.ToDays + 29999.5; // spacecraft default ref:1941 to asa ref: 1858
 	Variable elevation = gs.Elevation(sc);
 	Variable azimuth = gs.Azimuth(sc);
-	Variable RA = sc.RA / 180 * Constants.Pi;
-	Variable DE = sc.DEC / 180 * Constants.Pi;
+	Variable RA = (sc.RA / 180) * Constants.Pi;
+	Variable DE = (sc.DEC / 180) * Constants.Pi;
 	Variable emptyVar = 0.0;
 	Report mjdUTC.Format("%14.8f"), " ", RA.Format("%12.9f"),DE.Format("%13.9f"),"  000.0000  000.0000", azimuth.Format("%12.6f"), elevation.Format("%12.6f") to ASATrackingData without headers without pad;
 EndProcedure;
@@ -1689,8 +1689,8 @@ End;]]></FreeFormScript>
 	Variable mjdUTC = sc.EpochUTC.ToDays + 29999.5; // spacecraft default ref:1941 to asa ref: 1858
 	Variable elevation = gs.Elevation(sc);
 	Variable azimuth = gs.Azimuth(sc);
-	Variable RA = sc.RA / 180 * Constants.Pi;
-	Variable DE = sc.DEC / 180 * Constants.Pi;
+	Variable RA = (sc.RA / 180) * Constants.Pi;
+	Variable DE = (sc.DEC / 180) * Constants.Pi;
 	Variable emptyVar = 0.0;
 	Report mjdUTC.Format("%14.8f"), " ", RA.Format("%12.9f"),DE.Format("%13.9f"),"  000.0000  000.0000", azimuth.Format("%12.6f"), elevation.Format("%12.6f") to ASATrackingData without headers without pad;
 EndProcedure;
