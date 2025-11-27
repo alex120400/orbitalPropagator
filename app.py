@@ -389,12 +389,12 @@ class APP(tk.Tk):
         if err_msg is None:
             if self.telescope.connected_flag:
                 self.tel_conn_status_label.config(text="Connected", bg="green")
-                self.current_RA.set("Waiting for Track Request")
-                self.current_DE.set("Waiting for Track Request")
+                self.current_Azi.set("Waiting for Track Request")
+                self.current_Elev.set("Waiting for Track Request")
             else:
                 self.tel_conn_status_label.config(text="Disconnected", bg="red")
-                self.current_RA.set("Not connected")
-                self.current_DE.set("Not connected")
+                self.current_Azi.set("Not connected")
+                self.current_Elev.set("Not connected")
         else:
             mbox.showerror(title="Error", message=err_msg)
 
