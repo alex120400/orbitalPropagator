@@ -1593,10 +1593,10 @@ Define Procedure ReportToASAHeader(String SpaceCraftName, ReportInterface ASATra
 	Report "#   Created    : ", SystemTime().ConvertToCalendarDate()  to ASATrackingData without headers without pad;
 	Report "#" to ASATrackingData without headers without pad;
 	Report "#   Object     : ", SpaceCraftName to ASATrackingData without headers without pad;              
-	//Report "#" to ASATrackingData without headers without pad;
+	Report "#" to ASATrackingData without headers without pad;
 	//Report "#   (topocentric, True aquator And equinox; VRA Is sky motion Not coordinate motion, i.e. w/o cos(DEC))" to ASATrackingData without headers without pad;
 	//Report "#" to ASATrackingData without headers without pad;
-	//Report "#" to ASATrackingData without headers without pad;
+	Report "#	Note that RA/DE are in ICRF frame, not TETE as telescope expects" to ASATrackingData without headers without pad;
 	//Report "#" to ASATrackingData without headers without pad;
 	//Report "#" to ASATrackingData without headers without pad;
 	Report "#" to ASATrackingData without headers without pad;
@@ -1703,10 +1703,10 @@ Define Procedure ReportToASAHeader(String SpaceCraftName, ReportInterface ASATra
 	Report "#   Created    : ", SystemTime().ConvertToCalendarDate()  to ASATrackingData without headers without pad;
 	Report "#" to ASATrackingData without headers without pad;
 	Report "#   Object     : ", SpaceCraftName to ASATrackingData without headers without pad;              
-	//Report "#" to ASATrackingData without headers without pad;
+	Report "#" to ASATrackingData without headers without pad;
 	//Report "#   (topocentric, True aquator And equinox; VRA Is sky motion Not coordinate motion, i.e. w/o cos(DEC))" to ASATrackingData without headers without pad;
 	//Report "#" to ASATrackingData without headers without pad;
-	//Report "#" to ASATrackingData without headers without pad;
+	Report "#	Note that RA/DE are in ICRF frame, not TETE as telescope expects" to ASATrackingData without headers without pad;
 	//Report "#" to ASATrackingData without headers without pad;
 	//Report "#" to ASATrackingData without headers without pad;
 	Report "#" to ASATrackingData without headers without pad;

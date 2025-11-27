@@ -1,8 +1,13 @@
 from alpaca.telescope import Telescope
 import json
-from math import pi
+import numpy as np
+from numpy import pi
+
+from skyfield.api import load as sky_load
+from skyfield.api import wgs84 as sky_wgs84
 
 from utils.configManager import MIN_ALTITUDE_ElEVATION
+from preprocessing import load_StationLatLongAlt
 
 class TelescopeWrapper():
     def __init__(self):
@@ -11,10 +16,13 @@ class TelescopeWrapper():
         self.tracking_flag = None
         self._tel_status = None
         self._sat_status = None
-        self.RA_rad = None
-        self.DE_rad = None
+        self.AZ_deg = None
+        self.EL_deg = None
         self.tracking_bit = 0
         self.slewing_bit = 0
+
+        self._ts = sky_load.timescale()
+        self._gnd_station = sky_wgs84.latlon(*load_StationLatLongAlt())
 
     def connect_telescope(self):
         try:
@@ -69,11 +77,11 @@ class TelescopeWrapper():
             # 'RigthAscension': 3.2274482228661365, 'Declination': 3.165783924470721,
             # 'Status': 2, # bit 0: tracking (not working); bit 1: at park; bit 2: slewing
             # 'ErrornumberAxis1': 0, 'ErrornumberAxis2': 2304}
-            # slewing bit useful as it indicates whether or not telescope has arrived at waiting position
-            self.slewing_bit = self._tel_status['Status'] & 0b100
-            self.RA_rad = (self._tel_status['RigthAscension'] / 180) * pi
-            self.DE_rad = (self._tel_status['Declination'] / 180) * pi
-            print(f"RA: {self.RA_rad:.4f}, DE: {self.DE_rad:.4f}")
+            # slewing-bit useful as it indicates whether telescope has arrived at waiting position or not
+            self.slewing_bit = (self._tel_status['Status'] >> 2) # bit 2 is relevant
+            RA_deg, DE_deg = self._tel_status['RigthAscension'], self._tel_status['Declination']
+            jd = self._tel_status['JulianDate']
+            self.AZ_deg, self.EL_deg = self._topo_radec_to_azel(RA_deg, DE_deg, jd)
 
             # Ask the telescope for its tel_status as JSON
             json_string = self._telescope.CommandString("getSatStatus", True)
@@ -86,6 +94,50 @@ class TelescopeWrapper():
             return None
         except Exception as e:
             return f"Status Request failed:\n{str(e)}"
+
+    def _topo_radec_to_azel(self, ra_deg, dec_deg, jd):
+        """ Convert topocentric RA/Dec in degrees to Azimuth and Elevation in degrees.
+
+        :param ra_deg: Right Ascension in degrees (topocentric)
+        :type ra_deg: float
+        :param dec_deg: Declination in degrees (topocentric)
+        :type dec_deg: float
+        :param jd: Julian Date (TT or UTC, converted to TT internally)
+        :type jd: float
+
+        :returns: az_deg, el_deg: Azimuth and Elevation in degrees
+        """
+        # Convert RA/Dec to radians
+        ra = np.radians(ra_deg)
+        dec = np.radians(dec_deg)
+        lat = np.radians(self._gnd_station.latitude.degrees)
+
+        # Time as Terrestrial Time (TT)
+        t = self._ts.tt_jd(jd)  # Terrestrial Time
+
+        # Local Apparent Sidereal Time (LAST) in hours
+        lst_hours = self._gnd_station.lst_hours_at(t)
+        lst_rad = np.radians(lst_hours * 15.0)  # convert hours → degrees → radians
+
+        # Hour Angle
+        ha = lst_rad - ra
+
+        # Elevation
+        sin_alt = np.sin(dec) * np.sin(lat) + np.cos(dec) * np.cos(lat) * np.cos(ha)
+        alt = np.arcsin(sin_alt)
+
+        # Azimuth
+        cos_az = (np.sin(dec) - np.sin(alt) * np.sin(lat)) / (np.cos(alt) * np.cos(lat))
+        az = np.arccos(np.clip(cos_az, -1.0, 1.0))
+
+        # Correct quadrant: if sin(HA) > 0, az = 360° - az
+        az = np.where(np.sin(ha) > 0, 2 * np.pi - az, az)
+
+        # Convert to degrees
+        az_deg = np.degrees(az)
+        el_deg = np.degrees(alt)
+
+        return az_deg, el_deg
 
 
 

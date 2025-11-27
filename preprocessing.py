@@ -33,7 +33,7 @@ def load_StationLatLongAlt() -> (float, float, float):
         return latitude, longitude, altitude
     except Exception as e:
         print(f'JSON file f{STATION_CFG} can not be loaded: {str(e)}')
-        return 0, 0
+        return 0, 0, 0
 
 def update_LEO_TLE_data() -> bool:
     """ updates LEO TLE data from space-track.org

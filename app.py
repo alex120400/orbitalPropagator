@@ -75,8 +75,8 @@ class APP(tk.Tk):
         self.tel_conn_status_label = None # will be tk.Label (tk instead of ttk because coloring is easier)
         self.telescope = tracking.TelescopeWrapper()
         self.tracking_status_label = None # will be tk.Label (tk instead of ttk because coloring is easier)
-        self.current_RA = tk.StringVar(value="Not connected")
-        self.current_DE = tk.StringVar(value="Not connected")
+        self.current_Azi = tk.StringVar(value="Not connected")
+        self.current_Elev = tk.StringVar(value="Not connected")
 
 
         # threads
@@ -350,10 +350,10 @@ class APP(tk.Tk):
         self.tracking_status_label = tk.Label(self.telescope_frame, text="Not Tracking", bg="red")
         self.tracking_status_label.grid(row=1, column=1)
 
-        ttk.Label(self.telescope_frame, text="Current RA (rad):").grid(row=0, column=3)
-        ttk.Label(self.telescope_frame, text="Current DE (rad):").grid(row=1, column=3)
-        ttk.Label(self.telescope_frame, textvariable=self.current_RA).grid(row=0, column=4)
-        ttk.Label(self.telescope_frame, textvariable=self.current_DE).grid(row=1, column=4)
+        ttk.Label(self.telescope_frame, text="Current Azimuth (deg):").grid(row=0, column=3)
+        ttk.Label(self.telescope_frame, text="Current Elevation (deg):").grid(row=1, column=3)
+        ttk.Label(self.telescope_frame, textvariable=self.current_Azi).grid(row=0, column=4)
+        ttk.Label(self.telescope_frame, textvariable=self.current_Elev).grid(row=1, column=4)
 
         for widget in self.telescope_frame.winfo_children():
             widget.grid_configure(padx=self.WIDGET_PADX, pady=self.WIDGET_PADY, sticky="nesw")
@@ -406,11 +406,9 @@ class APP(tk.Tk):
 
         if self.telescope.connected_flag and self.eph_file is not None and os.path.exists(self.eph_file):
             err_msg = self.telescope.start_track(self.eph_file)
-
             if err_msg is not None:
                 mbox.showerror(title="Error", message=err_msg)
             else:
-                self.tracking_status_label.config(text="Slewing to Start Position", bg="yellow")
                 # start update thread, telescope sets tracking_flag
                 self.tracking_thread = self._start_a_thread(self._update_status)
         else:
@@ -423,32 +421,29 @@ class APP(tk.Tk):
             err_msg = self.telescope.update_status()
             if err_msg is not None:
                 self.telescope.tracking_flag = False
-                mbox.showerror(title="Error", message=err_msg)
+                self.after(0, mbox.showerror, "Error", err_msg)
                 return
-            elif tracking_has_not_started_yet:
+            elif tracking_has_not_started_yet: # after method is thread safe in tkinter
                 if self.telescope.slewing_bit == 1:
-                    self.tracking_status_label.config(text="Slewing to Start Position", bg="yellow")
-                    self.current_RA.set(f"{self.telescope.RA_rad:.8f}")
-                    self.current_DE.set(f"{self.telescope.DE_rad:.8f}")
+                    self.after(0, self.update_tracking_label, "Slewing to Start Position", "yellow")
                 elif self.telescope.slewing_bit == 0 and self.telescope.tracking_bit == 0:
-                    self.tracking_status_label.config(text="Waiting in Start Position", bg="yellow")
+                    self.after(0, self.update_tracking_label, "Waiting in Start Position", "yellow")
                 elif self.telescope.tracking_bit == 1:
                     tracking_has_not_started_yet = False # started tracking
-                    self.tracking_status_label.config(text="Tracking", bg="green")
-                    self.current_RA.set(f"{self.telescope.RA_rad:.8f}")
-                    self.current_DE.set(f"{self.telescope.DE_rad:.8f}")
+                    self.after(0, self.update_tracking_label, "Tracking", "green")
                 else:
                     print("This should never be printed")
             else: # have started tracking already
-                self.current_RA.set(f"{self.telescope.RA_rad:.8f}")
-                self.current_DE.set(f"{self.telescope.DE_rad:.8f}")
                 if self.telescope.tracking_bit != 1: # stopped tracking
-                    self.tracking_status_label.config(text="Finished Tracking", bg="yellow")
+                    self.after(0, self.update_tracking_label, "Finished Tracking", "yellow")
                     self.telescope.tracking_flag = False
-
+            self.after(0, self.current_Azi.set, f"{self.telescope.AZ_deg:.8f}")
+            self.after(0, self.current_Elev.set,f"{self.telescope.EL_deg:.8f}")
             sleep(1)
 
 
+    def update_tracking_label(self, txt, bg):
+        self.tracking_status_label.config(text=txt, bg=bg)
 
     def _create_postprocessing_tab(self):
         pass
