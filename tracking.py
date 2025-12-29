@@ -95,6 +95,9 @@ class TelescopeWrapper():
         except Exception as e:
             return f"Status Request failed:\n{str(e)}"
 
+    def get_tel_status(self):
+        return self._tel_status
+
     def _topo_radec_to_azel(self, ra_deg, dec_deg, jd):
         """ Convert topocentric RA/Dec in degrees to Azimuth and Elevation in degrees.
 
@@ -117,7 +120,7 @@ class TelescopeWrapper():
 
         # Local Apparent Sidereal Time (LAST) in hours
         lst_hours = self._gnd_station.lst_hours_at(t)
-        lst_rad = np.radians(lst_hours * 15.0)  # convert hours → degrees → radians
+        lst_rad = np.radians(lst_hours * 15.0)  # convert hours → degrees (=> *360/24) → radians
 
         # Hour Angle
         ha = lst_rad - ra

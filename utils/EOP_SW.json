@@ -1,0 +1,10 @@
+{
+    "EOP": {
+      "url": "https://celestrak.org/SpaceData/EOP-Last5Years.csv",
+      "file_name": "earth_orientation_parameters_celestrak.csv"
+    },
+    "space_weather": {
+      "url": "https://celestrak.org/SpaceData/SW-Last5Years.csv",
+      "file_name": "space_weather_celestrak.csv"
+    }
+}

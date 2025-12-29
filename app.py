@@ -21,6 +21,7 @@ try:
     import preprocessing as pre
     import freeflyer as ff
     import tracking
+    import camera
 
 except ModuleNotFoundError as msg:
     print('Failed to load modules. \n' + str(msg))
@@ -75,14 +76,14 @@ class APP(tk.Tk):
         self.tel_conn_status_label = None # will be tk.Label (tk instead of ttk because coloring is easier)
         self.telescope = tracking.TelescopeWrapper()
         self.tracking_status_label = None # will be tk.Label (tk instead of ttk because coloring is easier)
+        self.camera = camera.CameraWrapper()
         self.current_Azi = tk.StringVar(value="Not connected")
         self.current_Elev = tk.StringVar(value="Not connected")
 
 
         # threads
-        # self.timing_thread = None  # will be a new thread each time there is a new measurement started
         self.tracking_thread = None  # will be a new thread each time there is a new track started
-        # self.converting_thread = None  # will be a new thread each time there is a new measurement started
+        self.imaging_thread = None #  will be a new thread each time there is a new track started
 
         # # plotting
         # self.canvas = None  # drawing area
@@ -119,7 +120,6 @@ class APP(tk.Tk):
 
         # add tabs and tel_status frame
         self._create_preprocessing_tab()
-        self._create_camera_tab()
         self._create_tracking_tab()
         self._create_postprocessing_tab()
 
@@ -319,9 +319,6 @@ class APP(tk.Tk):
         pass
 
 
-    def _create_camera_tab(self):
-        pass
-
     def _create_tracking_tab(self):
         self.tracking_tab.columnconfigure(0, weight=1)
         self.tracking_tab.rowconfigure(0, weight=0)
@@ -335,8 +332,8 @@ class APP(tk.Tk):
         self.eph_preview.pack(padx=self.WIDGET_PADX, pady=self.WIDGET_PADY, fill='x')
         self.eph_frame.grid(row=0, column=0, columnspan=1)
 
-        # tracking & telescope options
-        self.telescope_frame = ttk.LabelFrame(self.tracking_tab, text="Telescope setup & tracking")
+        # telescope, camera and tracking options
+        self.telescope_frame = ttk.LabelFrame(self.tracking_tab, text="Telescope & Camera connection, tracking interface")
         self.telescope_frame.columnconfigure(0, weight=1)
         self.telescope_frame.columnconfigure(1, weight=1)
         self.telescope_frame.columnconfigure(3, weight=1)
@@ -345,10 +342,14 @@ class APP(tk.Tk):
             .grid(row=0, column=0)
         self.tel_conn_status_label = tk.Label(self.telescope_frame, text="Disconnected", bg="red")
         self.tel_conn_status_label.grid(row=0, column=1)
-        ttk.Button(self.telescope_frame, text="Start tracking", command=self._start_tracking) \
+        ttk.Button(self.telescope_frame, text="Toggle camera connection", command=self._toggle_camera_conn) \
             .grid(row=1, column=0)
+        self.cam_conn_status_label = tk.Label(self.telescope_frame, text="Disconnected", bg="red")
+        self.cam_conn_status_label.grid(row=1, column=1)
+        ttk.Button(self.telescope_frame, text="Start tracking", command=self._start_tracking) \
+            .grid(row=2, column=0)
         self.tracking_status_label = tk.Label(self.telescope_frame, text="Not Tracking", bg="red")
-        self.tracking_status_label.grid(row=1, column=1)
+        self.tracking_status_label.grid(row=2, column=1)
 
         ttk.Label(self.telescope_frame, text="Current Azimuth (deg):").grid(row=0, column=3)
         ttk.Label(self.telescope_frame, text="Current Elevation (deg):").grid(row=1, column=3)
@@ -398,26 +399,59 @@ class APP(tk.Tk):
         else:
             mbox.showerror(title="Error", message=err_msg)
 
+    def _toggle_camera_conn(self):
+        if self.camera.connected_flag:
+            # camera is connected, -> disconnect
+            err_msg_cam = self.camera.disconnectCamera()
+            err_msg_filter = self.camera.disconnectFilterWheel()
+        else:
+            # camera not yet connected -> connect
+            err_msg_filter = self.camera.connectFilterWheel()
+            err_msg_cam = self.camera.connectCamera()
+
+
+        if err_msg_filter is None and err_msg_cam is None:
+            if self.camera.connected_flag:
+                self.cam_conn_status_label.config(text="Connected", bg="green")
+            else:
+                self.cam_conn_status_label.config(text="Disconnected", bg="red")
+        else:
+            if err_msg_cam is None:
+                err_msg = err_msg_filter
+            elif err_msg_filter is None:
+                err_msg = err_msg_cam
+            else:
+                err_msg = "There were multiple errors:\n"
+                err_msg += "Camera error:\n" + err_msg_cam + "\n"
+                err_msg += "Filter error:\n" + err_msg_filter + "\n"
+            mbox.showerror(title="Error", message=err_msg)
+
+
     def _start_tracking(self):
         if self.tracking_thread is not None and self.tracking_thread.is_alive():
             # measurement is ongoing, cannot start new one
             mbox.showerror("Error", "Wait for current tracking to finish!")
             return
 
+        if not self.camera.connected_flag:
+            if not mbox.askokcancel(message="Camera is not connected, do you really want to track without imaging?"):
+                return
+
         if self.telescope.connected_flag and self.eph_file is not None and os.path.exists(self.eph_file):
             err_msg = self.telescope.start_track(self.eph_file)
             if err_msg is not None:
                 mbox.showerror(title="Error", message=err_msg)
             else:
-                # start update thread, telescope sets tracking_flag
+                # start update/tracking & imaging thread, telescope sets tracking_flag
                 self.tracking_thread = self._start_a_thread(self._update_status)
+                self.imaging_thread = self._start_a_thread(self._take_images)
         else:
             mbox.showerror(title="Error", message="Ephemeris File not configured correctly!")
 
     def _update_status(self):
         # only called internally by a thread while tracking
         tracking_has_not_started_yet = True
-        while self.telescope.tracking_flag: # is set by telescope
+        while self.telescope.tracking_flag: # already set by telescope, reset within loop
             err_msg = self.telescope.update_status()
             if err_msg is not None:
                 self.telescope.tracking_flag = False
@@ -439,7 +473,27 @@ class APP(tk.Tk):
                     self.telescope.tracking_flag = False
             self.after(0, self.current_Azi.set, f"{self.telescope.AZ_deg:.8f}")
             self.after(0, self.current_Elev.set,f"{self.telescope.EL_deg:.8f}")
-            sleep(1)
+            sleep(0.5)
+
+    def _take_images(self):
+        if self.camera.connected_flag:
+            # create directory for imaging
+            track_path, eph_file = os.path.split(self.eph_file)
+            eph_name = eph_file[16:-4] # get name of file without 'ASATrackingData_' and '.eph'
+            fits_path = os.path.join(track_path, eph_name)
+            os.mkdir(fits_path)
+
+            image_idx = 1
+            while self.telescope.tracking_flag: # stay in loop while tracking
+                if self.telescope.tracking_bit == 1: # only take images while actually tracking and not waiting
+                    try:
+                        self.camera.takeSingleImage(self.telescope, exposureTimeMs=200,
+                                                    filePath=fits_path, img_number=image_idx)
+                        image_idx += 1
+                    except Exception as e:
+                        print(f"There was an error while taking an imgage:\n{str(e)}")
+        else:
+            return
 
 
     def update_tracking_label(self, txt, bg):

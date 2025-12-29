@@ -1,0 +1,85 @@
+{
+    "binning": {
+        "binX": 3,
+        "binY": 3,
+        "mode": "HW",
+        "highSpeed": false
+    },
+    "cooling": {
+        "cmosTemperature": -10,
+        "cooling": true,
+        "fan": true,
+        "antiDew": false
+    },
+    "gain": {
+        "gain": 200,
+        "setAuto": false,
+        "bitDepth": 16
+    },
+    "ROI": {
+        "startX": 9576,
+        "startY": 6388,
+        "numX": 0,
+        "numY": 0,
+        "fullFrame": true
+    },
+    "exposure": {
+        "exposureTimeMs": 100,
+        "usbBandwidth": 99
+    },
+    "delay": {
+        "swBinInMsMiddleReadoutLineBeginOfFrame": 784.5350817,
+        "hwBin3InMsMiddleReadoutLineBeginOfFrame": 90.81130389
+    },
+    "dimension": {
+        "width": 3192,
+        "height": 2128,
+        "rotationAngle": -64.7390513577836
+    },
+    "filter": {
+        "1": {
+            "name": "NO FILTER",
+            "wavelengthMicron": 0.56
+        },
+        "2": {
+            "name": "645 LONGPASS",
+            "wavelengthMicron": 0.772
+        },
+        "3": {
+            "name": "700 LONGPASS",
+            "wavelengthMicron": 0.808
+        },
+        "4": {
+            "name": "Baader L",
+            "wavelengthMicron": 0.533
+        },
+        "5": {
+            "name": "Baader R",
+            "wavelengthMicron": 0.65
+        },
+        "6": {
+            "name": "Baader G",
+            "wavelengthMicron": 0.526
+        },
+        "7": {
+            "name": "Baader B",
+            "wavelengthMicron": 0.463
+        }
+    },
+    "focus": {
+        "current": 1,
+        "base": 8985,
+        "offset_1": 0,
+        "offset_2": 0,
+        "offset_3": 0,
+        "offset_4": 0,
+        "offset_5": 0,
+        "offset_6": 0,
+        "offset_7": 0
+    },
+    "display": {
+        "contrast": 1,
+        "brightness": 50,
+        "downscale": 2
+    }
+}

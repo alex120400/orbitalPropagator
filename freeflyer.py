@@ -1,5 +1,10 @@
 import os
-from utils.configManager import MISSION_PLAN_PATH
+import json
+from time import time
+
+from skyfield.api import load as sky_load
+
+from utils.configManager import MISSION_PLAN_PATH, EOP_SW_CFG
 
 try:
     from aisolutions.ExampleUtilities import ExampleUtilities
@@ -18,6 +23,26 @@ class MissionPlanRunner:
 
         # Get path to runtime library
         self.ff_install_dir = ExampleUtilities.get_freeflyer_install_directory()
+        print(self.ff_install_dir)
+        self._update_EOP_and_SW()
+
+    def _update_EOP_and_SW(self):
+        tmp_path = "utils"
+        data_path = os.path.join(self.ff_install_dir, "data", "misc")
+        # update EOP (= Earth Orientation Parameters)
+        try:
+            with open(EOP_SW_CFG) as f:
+                EOP_SW_data = json.load(f)
+                for key in ["EOP", "space_weather"]:
+                    url = EOP_SW_data[key]["url"]
+                    file_name = EOP_SW_data[key]["file_name"]
+                    tmp_file_name = os.path.join(tmp_path, file_name)
+                    output_file_name = os.path.join(data_path, file_name)
+                    if (time() - os.path.getmtime(tmp_file_name)) > (1 * 24 * 60 * 60): # download once every day
+                        sky_load.download(url, tmp_file_name)
+                        # os.replace(tmp_file_name, output_file_name) # will not work, load files in ff
+        except OSError as e:
+            print(f"Error while updating EOP and SW:\n{str(e)}")
 
     def run_SGP4_EPH_plan(self, durationMin: float, startTimeUTCString: str):
         """ Runs the sgp4_eph missionplan which creates eph files to track sgp4 propagated satellites """

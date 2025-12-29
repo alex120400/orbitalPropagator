@@ -4,7 +4,7 @@ UTILS_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR = os.path.abspath(os.path.join(UTILS_DIR, '..'))
 
 # ASI385CAM_CFG = os.path.join(UTILS_DIR, "ASI386MCConfig.json")
-# ASI6200CAM_CFG = os.path.join(UTILS_DIR, "ASI6200MMPROConfig.json")
+ASI6200CAM_CFG = os.path.join(UTILS_DIR, "ASI6200MMPROConfig.json")
 # POINT_GRID_CFG = os.path.join(UTILS_DIR, "pointingGrid.json")
 STATION_CFG = os.path.join(UTILS_DIR, "stationInformation.json")
 # TEL_LIMITS_CFG = os.path.join(UTILS_DIR, "telescopeLimits.json")
@@ -25,6 +25,7 @@ TLE_DATA_PATH = os.path.join(BASE_DIR, "TLE_data")
 OGS_TLE_FILE = os.path.join(TLE_DATA_PATH, "ogs_tle", "Stations.tle") # sample tle file, uses more
 LEO_TLE_FILE = os.path.join(TLE_DATA_PATH, "elsetsSpaceTrackLEOMostRecent.tle")
 SPACE_TRACK_CFG = os.path.join(UTILS_DIR, "space_track.json")
+EOP_SW_CFG = os.path.join(UTILS_DIR, "EOP_SW.json")
 
 MISSION_PLAN_PATH = os.path.join(BASE_DIR, "missionplans")
 EPHEMERIDES_PATH = os.path.join(BASE_DIR, "ephemerides")
