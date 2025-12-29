@@ -58,7 +58,8 @@ class CameraWrapper():
 
     def connectCamera(self):
         try:
-            libraryFilePath = os.getenv('ZWO_ASI_LIB')
+            libraryFilePath = os.getenv('ZWO_ASI_LIB', os.path.join("lib", "ASICamera2.dll"))
+            print(libraryFilePath)
             asi.init(libraryFilePath)
         except Exception as e:
             return f'Environment variable has wrong SDK library path or has not been set: {str(e)}'
