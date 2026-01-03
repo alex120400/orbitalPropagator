@@ -330,7 +330,7 @@ class APP(tk.Tk):
         self.eph_tle_frame = ttk.LabelFrame(self.tracking_tab, text="Ephemeris/TLE selection and inspection")
         ttk.Button(self.eph_tle_frame, text="Select Ephemeris/TLE file", command=self._select_eph_tle_file) \
             .pack(padx=self.WIDGET_PADX, pady=self.WIDGET_PADY, expand=True, fill='x')
-        self.eph_tle_preview = st.ScrolledText(self.eph_tle_frame, width=90, height=20)
+        self.eph_tle_preview = st.ScrolledText(self.eph_tle_frame, width=90, height=18)
         self.eph_tle_preview.pack(padx=self.WIDGET_PADX, pady=self.WIDGET_PADY, fill='x')
         self.eph_tle_frame.grid(row=0, column=0, columnspan=1)
 
@@ -362,7 +362,7 @@ class APP(tk.Tk):
 
         for widget in self.telescope_frame.winfo_children():
             widget.grid_configure(padx=self.WIDGET_PADX, pady=self.WIDGET_PADY, sticky="nesw")
-        ttk.Separator(self.telescope_frame, orient="vertical").grid(row=0, rowspan=2, column=2, sticky="ns",
+        ttk.Separator(self.telescope_frame, orient="vertical").grid(row=0, rowspan=3, column=2, sticky="ns",
                                                                     padx=self.WIDGET_PADX, pady=self.WIDGET_PADY)
 
         # layout
@@ -390,6 +390,7 @@ class APP(tk.Tk):
         # Making the text read only
         self.eph_tle_preview.configure(state='disabled')
 
+
     def _toggle_telescope_conn(self):
         if self.telescope.connected_flag:
             # telescope is connected, -> disconnect
@@ -410,6 +411,7 @@ class APP(tk.Tk):
         else:
             mbox.showerror(title="Error", message=err_msg)
 
+
     def _toggle_camera_conn(self):
         if self.camera.connected_flag:
             # camera is connected, -> disconnect
@@ -419,7 +421,6 @@ class APP(tk.Tk):
             # camera not yet connected -> connect
             err_msg_filter = self.camera.connectFilterWheel()
             err_msg_cam = self.camera.connectCamera()
-
 
         if err_msg_filter is None and err_msg_cam is None:
             if self.camera.connected_flag:
@@ -459,6 +460,7 @@ class APP(tk.Tk):
         else:
             mbox.showerror(title="Error", message="Ephemeris File not configured correctly!")
 
+
     def _update_status(self):
         # only called internally by a thread while tracking
         tracking_has_not_started_yet = True
@@ -482,16 +484,20 @@ class APP(tk.Tk):
                 if self.telescope.tracking_bit != 1: # stopped tracking
                     self.after(0, self.update_tracking_label, "Finished Tracking", "yellow")
                     self.telescope.tracking_flag = False
+                    track_dir, track_name = os.path.split(self.eph_tle_file) # file name always starts with ASATrackingData_
+                    sat_name = track_name[16:-4] # and ends with either .eph or .tle
+                    self.telescope.save_tracking_data(os.path.join(track_dir, "trackingReport_", sat_name, ".csv"))
             self.after(0, self.current_mjd.set, f"{self.telescope.mjd:.8f}")
             self.after(0, self.current_Azi.set, f"{self.telescope.AZ_deg:.8f}")
             self.after(0, self.current_Elev.set,f"{self.telescope.EL_deg:.8f}")
             sleep(0.5)
 
+
     def _take_images(self):
         if self.camera.connected_flag:
             # create directory for imaging
-            track_path, eph_file = os.path.split(self.eph_tle_file)
-            eph_name = eph_file[16:-4] # get name of file without 'ASATrackingData_' and '.eph'
+            track_path, eph_tle_file = os.path.split(self.eph_tle_file)
+            eph_name = eph_tle_file[16:-4] # get name of file without 'ASATrackingData_' and '.eph'/'.tle'
             fits_path = os.path.join(track_path, eph_name)
             os.mkdir(fits_path)
 
@@ -511,8 +517,10 @@ class APP(tk.Tk):
     def update_tracking_label(self, txt, bg):
         self.tracking_status_label.config(text=txt, bg=bg)
 
+
     def _create_postprocessing_tab(self):
         pass
+
 
     @staticmethod
     def _start_a_thread(target_function, args=None):

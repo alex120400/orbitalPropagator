@@ -5,7 +5,6 @@ import datetime as dt
 import numpy as np
 import zwoasi as asi
 import astropy.io.fits as fits
-from alpaca.filterwheel import FilterWheel
 import win32com.client
 
 from utils.configManager import ASI6200CAM_CFG

@@ -1,4 +1,9 @@
-#The script processes each video frame and calculates the distances between center of the
+# This script contains functions to
+# -) show fits files and their headers
+# -) process fits files to calculate the centroid and center-distance of the satellite within the image
+# -) convert pixel offsets to altitude and azimuth offsets
+# -) plot a given list of trackingReport (csv) files and compare their tracking progress
+# processes each video frame and calculates the distances between center of the
 # minimal enclosing circle for each contour
 # and the center of the picture
 
@@ -25,7 +30,6 @@ def show_fits_image_and_header(fits_file, smart_grey_scale=True):
 
     plt.colorbar()
     plt.show()
-
 
 
 def detect_satellite(fits_path, visualize_flag=False, debug_flag=False):
@@ -206,12 +210,68 @@ def camera_to_altaz_projection(u, v, fx=0.424574272713/3600, fy=0.424574272713/3
     return alt, az
 
 
+def compare_tracking_to_ephemeris(tracking_csv, eph_file, tracking_label="Measured", eph_label="Ephemeris"):
+    """
+    :param tracking_csv: Path to CSV file with tracking data (JD;Az;Alt)
+    :type tracking_csv: str
+
+    :param eph_file: Path to ephemeris file (.eph) containing MJD, AZI, ELE
+    :type eph_file: str
+
+    :param tracking_label: Label for measured tracking data
+    :type tracking_label: str
+
+    :param eph_label: Label for ephemeris data
+    :type eph_label: str
+    """
+
+    # ---------- Load tracking data ----------
+    tracking_data = np.loadtxt(tracking_csv, delimiter=";", skiprows=1)
+    jd_track, az_track, alt_track = tracking_data.T
+
+    # Convert JD to relative time [seconds]
+    t0 = jd_track[0]
+    t_track = (jd_track - t0) * 86400.0
+
+    # ---------- Load ephemeris data ----------
+    eph_data = np.loadtxt(eph_file)
+    mjd_eph = eph_data[:, 0]
+    az_eph = eph_data[:, 5]
+    alt_eph = eph_data[:, 6]
+
+    # Convert MJD → JD → relative time [seconds]
+    jd_eph = mjd_eph + 2400000.5
+    t_eph = (jd_eph - t0) * 86400.0
+
+    # ---------- Plot Azimuth ----------
+    plt.figure(figsize=(10, 6))
+    plt.plot(t_track, az_track, label=tracking_label)
+    plt.plot(t_eph, az_eph, "--", label=eph_label)
+
+    plt.xlabel("Time since start [s]")
+    plt.ylabel("Azimuth [deg]")
+    plt.title("Azimuth: Measured vs Ephemeris")
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.show()
+
+    # ---------- Plot Altitude ----------
+    plt.figure(figsize=(10, 6))
+    plt.plot(t_track, alt_track, label=tracking_label)
+    plt.plot(t_eph, alt_eph, "--", label=eph_label)
+
+    plt.xlabel("Time since start [s]")
+    plt.ylabel("Altitude [deg]")
+    plt.title("Altitude: Measured vs Ephemeris")
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.show()
 
 
-if __name__ == "__main__":
-    fits_folder = "..\\..\\Beispielüberflüge\\AJISAI_CPF_002"
-
-    with os.scandir(fits_folder) as entries:
+def scan_entire_fits_folder(fits_folder_path):
+    with os.scandir(fits_folder_path) as entries:
         i = 0
         missed_satellites_cnt = 0
         missed_satellites_idx = []
@@ -271,5 +331,12 @@ if __name__ == "__main__":
         plt.title("Satellite distance distribution")
         plt.grid(True, alpha=0.3)
         plt.show()
+
+if __name__ == "__main__":
+    fits_folder = "..\\..\\Beispielüberflüge\\AJISAI_CPF_002"
+
+
+
+
 
 

@@ -17,8 +17,11 @@ class TelescopeWrapper():
         self._tel_status = None
         self._sat_status = None
         self.AZ_deg = None
+        self._AZ_deg_list = []
         self.EL_deg = None
+        self._EL_deg_list = []
         self.mjd = None
+        self._mjd_list = []
         self.tracking_bit = 0
         self.slewing_bit = 0
 
@@ -91,6 +94,11 @@ class TelescopeWrapper():
             self.mjd = jd # might need adjustments
             self.AZ_deg, self.EL_deg = self._topo_radec_to_azel(RA_deg, DE_deg, jd)
 
+            # append data to lists
+            self._mjd_list.append(self.mjd)
+            self._AZ_deg_list.append(self.AZ_deg)
+            self._EL_deg_list.append(self.EL_deg)
+
             # Ask the telescope for its sat_status as JSON
             json_string = self._telescope.CommandString("getSatStatus", True)
             self._sat_status = json.loads(json_string) # Parse JSON into a Python dict
@@ -105,6 +113,11 @@ class TelescopeWrapper():
 
     def get_tel_status(self):
         return self._tel_status
+
+    def save_tracking_data(self, full_file_path):
+        data = np.column_stack((self._mjd_list, self._AZ_deg_list, self._EL_deg_list))
+        np.savetxt(full_file_path, data, delimiter=";", header="Epoch (mjd);Azimuth (deg),Elevation (deg)")
+
 
     def _topo_radec_to_azel(self, ra_deg, dec_deg, jd):
         """ Convert topocentric RA/Dec in degrees to Azimuth and Elevation in degrees.
