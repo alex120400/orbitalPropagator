@@ -80,12 +80,14 @@ class CameraWrapper():
                 print(f'Using #{camera_id}: {cameraList[camera_id]}')
             self.camera = asi.Camera(camera_id)
         except Exception as e:
+            self.connected_flag = False
             return f'No cameras found or failed to connect to camera: {str(e)}'
 
         try:
             self._updateCameraSettings()
         except Exception as e:
             return f"There was en error while configuring the camera:\n{str(e)}"
+        self.connected_flag = True
 
     def disconnectCamera(self):
         try:
@@ -93,6 +95,7 @@ class CameraWrapper():
             self.camera.set_control_value(asi.ASI_FAN_ON, False)
             self.camera.close()
             print(f'Disconnected from Camera')
+            self.connected_flag = False
         except Exception as e:
             return f'Camera disconnect failed: {str(e)}'
 

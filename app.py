@@ -421,6 +421,8 @@ class APP(tk.Tk):
             # camera not yet connected -> connect
             err_msg_filter = self.camera.connectFilterWheel()
             err_msg_cam = self.camera.connectCamera()
+            print(f"Filter msg is: {err_msg_filter}")
+            print(f"Cam msg is: {err_msg_cam}")
 
         if err_msg_filter is None and err_msg_cam is None:
             if self.camera.connected_flag:
