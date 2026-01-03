@@ -94,10 +94,7 @@ class TelescopeWrapper():
             self.mjd = jd - 2400000.5 # might need adjustments
             self.AZ_deg, self.EL_deg = self._topo_radec_to_azel(RA_deg, DE_deg, jd)
 
-            # append data to lists
-            self._mjd_list.append(self.mjd)
-            self._AZ_deg_list.append(self.AZ_deg)
-            self._EL_deg_list.append(self.EL_deg)
+
 
             # Ask the telescope for its sat_status as JSON
             json_string = self._telescope.CommandString("getSatStatus", True)
@@ -107,6 +104,12 @@ class TelescopeWrapper():
             # 'TrackErrAx1': -0.00045685676708373535, # mrad
             # 'TrackErrAx2': -0.0057915890411264215} # mrad
             self.tracking_bit = self._sat_status['status'] & 0b1
+
+            if self.tracking_bit:
+                # append data to lists if tracking bit is on
+                self._mjd_list.append(self.mjd)
+                self._AZ_deg_list.append(self.AZ_deg)
+                self._EL_deg_list.append(self.EL_deg)
             return None
         except Exception as e:
             return f"Status Request failed:\n{str(e)}"
@@ -117,6 +120,10 @@ class TelescopeWrapper():
     def save_tracking_data(self, full_file_path):
         data = np.column_stack((self._mjd_list, self._AZ_deg_list, self._EL_deg_list))
         np.savetxt(full_file_path, data, delimiter=";", header="Epoch (mjd);Azimuth (deg),Elevation (deg)")
+        # reset data for next measurements
+        self._mjd_list = []
+        self._EL_deg_list = []
+        self._AZ_deg_list = []
 
 
     def _topo_radec_to_azel(self, ra_deg, dec_deg, jd):

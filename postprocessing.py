@@ -210,7 +210,8 @@ def camera_to_altaz_projection(u, v, fx=0.424574272713/3600, fy=0.424574272713/3
     return alt, az
 
 
-def compare_tracking_to_ephemeris(tracking_csv, eph_file, tracking_label="Measured", eph_label="Ephemeris"):
+def compare_tracking_to_ephemeris(tracking_csv, eph_file, tracking_label="Measured", eph_label="Base Ephemeris",
+                                  title="Comparison"):
     """
     :param tracking_csv: Path to CSV file with tracking data (MJD;Az;Alt)
     :type tracking_csv: str
@@ -223,6 +224,9 @@ def compare_tracking_to_ephemeris(tracking_csv, eph_file, tracking_label="Measur
 
     :param eph_label: Label for ephemeris data
     :type eph_label: str
+
+    :param title: title of overall figure
+    :type title: str
     """
 
     # ---------- Load tracking data ----------
@@ -239,17 +243,17 @@ def compare_tracking_to_ephemeris(tracking_csv, eph_file, tracking_label="Measur
     az_eph = eph_data[:, 5]
     alt_eph = eph_data[:, 6]
 
-    # Convert MJD → JD → relative time [seconds]
+    # Convert MJD → relative time [seconds]
     t_eph = (mjd_eph - t0) * 86400.0
 
     # ---------- Plot Azimuth ----------
     plt.figure(figsize=(10, 6))
     plt.plot(t_track, az_track, label=tracking_label)
     plt.plot(t_eph, az_eph, "--", label=eph_label)
+    plt.title(title+": Azimuth")
 
     plt.xlabel("Time since start [s]")
     plt.ylabel("Azimuth [deg]")
-    plt.title("Azimuth: Measured vs Ephemeris")
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -259,10 +263,10 @@ def compare_tracking_to_ephemeris(tracking_csv, eph_file, tracking_label="Measur
     plt.figure(figsize=(10, 6))
     plt.plot(t_track, alt_track, label=tracking_label)
     plt.plot(t_eph, alt_eph, "--", label=eph_label)
+    plt.title(title+": Altitude")
 
     plt.xlabel("Time since start [s]")
     plt.ylabel("Altitude [deg]")
-    plt.title("Altitude: Measured vs Ephemeris")
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -333,6 +337,15 @@ def scan_entire_fits_folder(fits_folder_path):
 
 if __name__ == "__main__":
     fits_folder = "..\\..\\Beispielüberflüge\\AJISAI_CPF_002"
+
+    eph_based_csv = ".\\tracking\\2026Jan03__17_24__90\\trackingReport_CHUANG-XIN-1-03.csv"
+    tle_based_csv = ".\\tracking\\2026Jan03__17_24__90\\trackingReport_FENGYUN-3B.csv"
+
+    eph_based_source = ".\\tracking\\2026Jan03__17_24__90\\ASATrackingData_CHUANG-XIN-1-03.eph"
+    tle_based_source = ".\\tracking\\2026Jan03__17_24__90\\ASATrackingData_FENGYUN-3B.eph"
+
+    compare_tracking_to_ephemeris(tracking_csv=eph_based_csv, eph_file=eph_based_source, title="Tracking based on Ephemeris")
+    compare_tracking_to_ephemeris(tracking_csv=tle_based_csv, eph_file=tle_based_source, title="Tracking based on TLE")
 
 
 
