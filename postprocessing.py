@@ -273,6 +273,38 @@ def compare_tracking_to_ephemeris(tracking_csv, eph_file, tracking_label="Measur
     plt.show()
 
 
+def delay_ephemeris(eph_file, output_file, delay_minutes=10):
+    """
+    :param eph_file: Path to the original ephemeris file (.eph)
+    :type eph_file: str
+
+    :param output_file: Path to save the delayed ephemeris file
+    :type output_file: str
+
+    :param delay_minutes: Delay to add to each epoch in minutes
+    :type delay_minutes: float
+    """
+
+    # Convert minutes to days
+    delay_days = delay_minutes / (24 * 60)
+
+    with open(eph_file, "r") as fin, open(output_file, "w") as fout:
+        for line in fin:
+            stripped = line.strip()
+            if stripped.startswith("#") or len(stripped) == 0:
+                # Keep comments and empty lines unchanged
+                fout.write(line)
+            else:
+                # Split numeric columns, add delay to first column (MJD)
+                parts = line.split()
+                mjd = float(parts[0])
+
+                mjd_delayed = mjd + delay_days
+                # Reformat line: first column delayed, rest unchanged
+                new_line = f"{mjd_delayed:13.8f}" + line[13:]
+                fout.write(new_line + "\n")
+
+
 def scan_entire_fits_folder(fits_folder_path):
     with os.scandir(fits_folder_path) as entries:
         i = 0
@@ -338,16 +370,24 @@ def scan_entire_fits_folder(fits_folder_path):
 if __name__ == "__main__":
     fits_folder = "..\\..\\Beispielüberflüge\\AJISAI_CPF_002"
 
-    eph_based_csv = ".\\tracking\\2026Jan03__17_24__90\\trackingReport_CHUANG-XIN-1-03.csv"
-    tle_based_csv = ".\\tracking\\2026Jan03__17_24__90\\trackingReport_FENGYUN-3B.csv"
+    # eph_based_csv = ".\\tracking\\2026Jan03__17_24__90\\trackingReport_CHUANG-XIN-1-03.csv"
+    # tle_based_csv = ".\\tracking\\2026Jan03__17_24__90\\trackingReport_FENGYUN-3B.csv"
+    #
+    # eph_based_source = ".\\tracking\\2026Jan03__17_24__90\\ASATrackingData_CHUANG-XIN-1-03.eph"
+    # tle_based_source = ".\\tracking\\2026Jan03__17_24__90\\ASATrackingData_FENGYUN-3B.eph"
 
-    eph_based_source = ".\\tracking\\2026Jan03__17_24__90\\ASATrackingData_CHUANG-XIN-1-03.eph"
-    tle_based_source = ".\\tracking\\2026Jan03__17_24__90\\ASATrackingData_FENGYUN-3B.eph"
+    # eph_based_csv = ".\\tracking\\2026Jan03__18_04__90\\trackingReport_SCOUT-B-1-R-B.csv"
+    # tle_based_csv = ".\\tracking\\2026Jan03__18_04__90\\trackingReport_VENUS.csv"
+    #
+    # eph_based_source = ".\\tracking\\2026Jan03__18_04__90\\ASATrackingData_SCOUT-B-1-R-B.eph"
+    # tle_based_source = ".\\tracking\\2026Jan03__18_04__90\\ASATrackingData_VENUS.eph"
+    #
+    # compare_tracking_to_ephemeris(tracking_csv=eph_based_csv, eph_file=eph_based_source, title="Tracking based on Ephemeris")
+    # compare_tracking_to_ephemeris(tracking_csv=tle_based_csv, eph_file=tle_based_source, title="Tracking based on TLE")
 
-    compare_tracking_to_ephemeris(tracking_csv=eph_based_csv, eph_file=eph_based_source, title="Tracking based on Ephemeris")
-    compare_tracking_to_ephemeris(tracking_csv=tle_based_csv, eph_file=tle_based_source, title="Tracking based on TLE")
-
-
+    original_eph_path = ".\\tracking\\2026Jan03__18_37__90\\ASATrackingData_RSW-01.eph"
+    delayed_file_path = ".\\tracking\\2026Jan03__18_37__90\\ASATrackingData_RSW-01_delayed.eph"
+    delay_ephemeris(original_eph_path, delayed_file_path, 10)
 
 
 
