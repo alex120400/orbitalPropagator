@@ -154,6 +154,7 @@ class CameraWrapper():
 
 
         cameraInfo = self.camera.get_camera_property()
+        print(f"Camera properties are:\n{cameraInfo}")
         if camera_settings['ROI']['fullFrame']:
             maxWidth = cameraInfo['MaxWidth']
             maxHeight = cameraInfo['MaxHeight']
@@ -289,10 +290,10 @@ class CameraWrapper():
             # hdr['SITEELEV'] = (self.ascomInterface.elevation, 'Elevation of station in meters above ellipsoid')
             hdr['XBINNING'] = (self.binning, 'Binning level in X axis')
             # hdr['XORGSUBF'] = (self.startPosX, 'Starting position of subframe in X axis')
-            # hdr['XPIXSZ'] = (self.cameraProperty['PixelSize'] * self.binning, 'Pixel size in um in X axis')
+            hdr['XPIXSZ'] = (self.cameraProperty['PixelSize'] * self.binning, 'Pixel size in um in X axis')
             hdr['YBINNING'] = (self.binning, 'Binning level in Y axis')
             # hdr['YORGSUBF'] = (self.startPosY, 'Starting position of subframe in Y axis')
-            # hdr['YPIXSZ'] = (self.cameraProperty['PixelSize'] * self.binning, 'Pixel size in um in Y axis')
+            hdr['YPIXSZ'] = (self.cameraProperty['PixelSize'] * self.binning, 'Pixel size in um in Y axis')
             hdr['XSCALE'] = (hdr['XPIXSZ'] / 1000 / 5480 * 180 / np.pi * 3600, 'Pixel scale in arcsec/pixel in X axis')
             hdr['YSCALE'] = (hdr['YPIXSZ'] / 1000 / 5480 * 180 / np.pi * 3600, 'Pixel scale in arcsec/pixel in Y axis')
             if self.camera.get_control_value(asi.ASI_HARDWARE_BIN)[0]:
@@ -318,7 +319,7 @@ class CameraWrapper():
             img_number_padded = str(img_number).zfill(3)
             fileName = img_number_padded + "-Alt" + str(round(altitude)) + "-Az" + str(round(azimuth))
 
-            img_file = os.path.join(filePath, fileName, ".fits")
+            img_file = os.path.join(filePath, fileName+".fits")
             hdu.writeto(img_file, overwrite=True)
 
             # return img_file

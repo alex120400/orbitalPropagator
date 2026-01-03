@@ -488,7 +488,7 @@ class APP(tk.Tk):
                     self.telescope.tracking_flag = False
                     track_dir, track_name = os.path.split(self.eph_tle_file) # file name always starts with ASATrackingData_
                     sat_name = track_name[16:-4] # and ends with either .eph or .tle
-                    self.telescope.save_tracking_data(os.path.join(track_dir, "trackingReport_", sat_name, ".csv"))
+                    self.telescope.save_tracking_data(os.path.join(track_dir, "trackingReport_"+sat_name+".csv"))
             self.after(0, self.current_mjd.set, f"{self.telescope.mjd:.8f}")
             self.after(0, self.current_Azi.set, f"{self.telescope.AZ_deg:.8f}")
             self.after(0, self.current_Elev.set,f"{self.telescope.EL_deg:.8f}")
@@ -509,9 +509,10 @@ class APP(tk.Tk):
                     try:
                         self.camera.takeSingleImage(self.telescope, exposureTimeMs=200,
                                                     filePath=fits_path, img_number=image_idx)
-                        image_idx += 1
                     except Exception as e:
                         print(f"There was an error while taking an imgage:\n{str(e)}")
+                    finally:
+                        image_idx += 1
         else:
             return
 

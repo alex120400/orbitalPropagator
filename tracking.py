@@ -91,7 +91,7 @@ class TelescopeWrapper():
             self.slewing_bit = (self._tel_status['Status'] >> 2) # bit 2 is relevant
             RA_deg, DE_deg = self._tel_status['RigthAscension'], self._tel_status['Declination']
             jd = self._tel_status['JulianDate']
-            self.mjd = jd # might need adjustments
+            self.mjd = jd - 2400000.5 # might need adjustments
             self.AZ_deg, self.EL_deg = self._topo_radec_to_azel(RA_deg, DE_deg, jd)
 
             # append data to lists

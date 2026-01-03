@@ -212,7 +212,7 @@ def camera_to_altaz_projection(u, v, fx=0.424574272713/3600, fy=0.424574272713/3
 
 def compare_tracking_to_ephemeris(tracking_csv, eph_file, tracking_label="Measured", eph_label="Ephemeris"):
     """
-    :param tracking_csv: Path to CSV file with tracking data (JD;Az;Alt)
+    :param tracking_csv: Path to CSV file with tracking data (MJD;Az;Alt)
     :type tracking_csv: str
 
     :param eph_file: Path to ephemeris file (.eph) containing MJD, AZI, ELE
@@ -227,11 +227,11 @@ def compare_tracking_to_ephemeris(tracking_csv, eph_file, tracking_label="Measur
 
     # ---------- Load tracking data ----------
     tracking_data = np.loadtxt(tracking_csv, delimiter=";", skiprows=1)
-    jd_track, az_track, alt_track = tracking_data.T
+    mjd_track, az_track, alt_track = tracking_data.T
 
-    # Convert JD to relative time [seconds]
-    t0 = jd_track[0]
-    t_track = (jd_track - t0) * 86400.0
+    # Convert MJD to relative time [seconds]
+    t0 = mjd_track[0]
+    t_track = (mjd_track - t0) * 86400.0
 
     # ---------- Load ephemeris data ----------
     eph_data = np.loadtxt(eph_file)
@@ -240,8 +240,7 @@ def compare_tracking_to_ephemeris(tracking_csv, eph_file, tracking_label="Measur
     alt_eph = eph_data[:, 6]
 
     # Convert MJD → JD → relative time [seconds]
-    jd_eph = mjd_eph + 2400000.5
-    t_eph = (jd_eph - t0) * 86400.0
+    t_eph = (mjd_eph - t0) * 86400.0
 
     # ---------- Plot Azimuth ----------
     plt.figure(figsize=(10, 6))
