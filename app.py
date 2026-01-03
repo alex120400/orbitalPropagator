@@ -286,6 +286,7 @@ class APP(tk.Tk):
             with open(os.path.join(MISSION_PLAN_PATH, "TLE_export.tle"), "w", encoding='utf-8') as f:
                 for _id in selected_items:
                     sat_key = self.sat_tree.item(_id).get("values")[1]  # NoradID
+                    sat_key = sat_key.lstrip("0")  # remove leading zeros
                     for line in self.sat_tle_dict[sat_key]:
                         f.write(line)
         mbox.showinfo("Info", "Exported selected TLE data!")

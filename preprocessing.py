@@ -160,7 +160,8 @@ def create_satellite_data_list(startTime:sky.Time, durationMin:int, ogs_flag:boo
 
                         if idx == 3:
                             idx = 0
-                            satellites_dict[line1[2:8]] = (line0+"\n", line1+"\n", line2+"\n")
+                            sat_key = line1[2:8].lstrip().lstrip("0")  # remove leading spaces and zeros
+                            satellites_dict[sat_key] = (line0+"\n", line1+"\n", line2+"\n")
     else:
         with sky_load.open(LEO_TLE_FILE) as f:
             satellites = list(sky_parse_tle_file(f, ts))
@@ -184,7 +185,8 @@ def create_satellite_data_list(startTime:sky.Time, durationMin:int, ogs_flag:boo
                     continue
                 if idx == 3:
                     idx = 0
-                    satellites_dict[line1[2:8]] = (line0+"\n", line1+"\n", line2+"\n")
+                    sat_key = line1[2:8].lstrip().lstrip("0")  # remove leading spaces and zeros
+                    satellites_dict[sat_key] = (line0+"\n", line1+"\n", line2+"\n")
 
     print('Loaded', len(satellites), 'satellites')
 
