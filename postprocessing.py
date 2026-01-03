@@ -302,7 +302,7 @@ def delay_ephemeris(eph_file, output_file, delay_minutes=10):
                 mjd_delayed = mjd + delay_days
                 # Reformat line: first column delayed, rest unchanged
                 new_line = f"{mjd_delayed:13.8f}" + line[13:]
-                fout.write(new_line + "\n")
+                fout.write(new_line)
 
 
 def scan_entire_fits_folder(fits_folder_path):
@@ -385,8 +385,8 @@ if __name__ == "__main__":
     # compare_tracking_to_ephemeris(tracking_csv=eph_based_csv, eph_file=eph_based_source, title="Tracking based on Ephemeris")
     # compare_tracking_to_ephemeris(tracking_csv=tle_based_csv, eph_file=tle_based_source, title="Tracking based on TLE")
 
-    original_eph_path = ".\\tracking\\2026Jan03__18_37__90\\ASATrackingData_RSW-01.eph"
-    delayed_file_path = ".\\tracking\\2026Jan03__18_37__90\\ASATrackingData_RSW-01_delayed.eph"
+    original_eph_path = ".\\tracking\\2026Jan03__18_51__90\\ASATrackingData_HAIYANG-2C.eph"
+    delayed_file_path = ".\\tracking\\2026Jan03__18_51__90\\ASATrackingData_HAIYANG-2C_delayed.eph"
     delay_ephemeris(original_eph_path, delayed_file_path, 10)
 
 
