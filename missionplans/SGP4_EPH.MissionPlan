@@ -1641,7 +1641,8 @@ asa_tracking_name = asa_tracking_name.Replace("*", "-");
 asa_tracking_name = asa_tracking_name.Replace("?", "-");
 asa_tracking_name = asa_tracking_name.Replace('"', "-");
 ReportInterface ASATrackingData("tmp/ASATrackingData_"+asa_tracking_name+".eph");
-Call ReportToASAHeader(SpaceCraftName,ASATrackingData);]]></FreeFormScript>
+Call ReportToASAHeader(SpaceCraftName,ASATrackingData);
+spacecraftTLE.WriteToFile(1, "tmp/ASATrackingData_"+asa_tracking_name+".tle"); // export TLE of spacecraft as well]]></FreeFormScript>
       </FreeForm>
       <FreeForm enabled="true">
         <Label>Setup GroundStation1</Label>
@@ -1742,6 +1743,7 @@ asa_tracking_name = asa_tracking_name.Replace("?", "-");
 asa_tracking_name = asa_tracking_name.Replace('"', "-");
 ReportInterface ASATrackingData("tmp/ASATrackingData_"+asa_tracking_name+".eph");
 Call ReportToASAHeader(SpaceCraftName,ASATrackingData);
+spacecraftTLE.WriteToFile(1, "tmp/ASATrackingData_"+asa_tracking_name+".tle"); // export TLE of spacecraft as well
 GroundStation1.Latitude = 48.181927150599996;
 GroundStation1.Longitude = 16.396529607155557;
 GroundStation1.Height = 242.5827/1000; // freeflyer will hier km!

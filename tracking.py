@@ -18,6 +18,7 @@ class TelescopeWrapper():
         self._sat_status = None
         self.AZ_deg = None
         self.EL_deg = None
+        self.mjd = None
         self.tracking_bit = 0
         self.slewing_bit = 0
 
@@ -41,18 +42,24 @@ class TelescopeWrapper():
         except Exception as e:
             return f'Telescope disconnect failed:\n{str(e)}'
 
-    def start_track(self, eph_filepath):
+    def start_track(self, eph_tle_filepath, tle_only_flag=False):
         # check if tracking is not ongoing
         if self.tracking_flag:
             return "Track is ongoing! Cannot start a new one!"
         # Read all lines from the file
-        with open(eph_filepath, "r") as file:
+        with open(eph_tle_filepath, "r") as file:
             lines = [line.rstrip('\n') for line in file]  # Strip newlines if needed
 
-        # Serialize the list of lines to JSON
-        lines_list_serialized = json.dumps(lines)
         try:
-            self._telescope.Action("sat:ephlines", lines_list_serialized)
+            if tle_only_flag:
+                # send TLE data to telescope
+                self._telescope.Action("sat:name", lines[0][2:]) # ignore '0 ' at beginning
+                self._telescope.Action("sat:line1", lines[1]) # TLE Line 1
+                self._telescope.Action("sat:line2", lines[2]) # TLE Line 2
+            else:
+                # Serialize the list of lines to JSON
+                lines_list_serialized = json.dumps(lines)
+                self._telescope.Action("sat:ephlines", lines_list_serialized)
 
             # provide telescope with min elevation (=altitude) and start track
             self._telescope.Action("sat:startalt", MIN_ALTITUDE_ElEVATION)
@@ -81,9 +88,10 @@ class TelescopeWrapper():
             self.slewing_bit = (self._tel_status['Status'] >> 2) # bit 2 is relevant
             RA_deg, DE_deg = self._tel_status['RigthAscension'], self._tel_status['Declination']
             jd = self._tel_status['JulianDate']
+            self.mjd = jd # might need adjustments
             self.AZ_deg, self.EL_deg = self._topo_radec_to_azel(RA_deg, DE_deg, jd)
 
-            # Ask the telescope for its tel_status as JSON
+            # Ask the telescope for its sat_status as JSON
             json_string = self._telescope.CommandString("getSatStatus", True)
             self._sat_status = json.loads(json_string) # Parse JSON into a Python dict
             # will be dict with structure:

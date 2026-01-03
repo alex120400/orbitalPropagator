@@ -28,5 +28,5 @@ SPACE_TRACK_CFG = os.path.join(UTILS_DIR, "space_track.json")
 EOP_SW_CFG = os.path.join(UTILS_DIR, "EOP_SW.json")
 
 MISSION_PLAN_PATH = os.path.join(BASE_DIR, "missionplans")
-EPHEMERIDES_PATH = os.path.join(BASE_DIR, "ephemerides")
+TRACKING_PATH = os.path.join(BASE_DIR, "tracking")
 MIN_ALTITUDE_ElEVATION = 26

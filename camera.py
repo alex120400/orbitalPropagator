@@ -138,7 +138,7 @@ class CameraWrapper():
             self.exposureTimeDelayMs = camera_settings['delay']['swBinInMsMiddleReadoutLineBeginOfFrame']
         elif self.binning > 4:
             print(f'{self.binning}x{self.binning} binning is not supported, setting to 3!')
-            binning = 3
+            self.binning = 3
             self.exposureTimeDelayMs = camera_settings['delay']['swBinInMsMiddleReadoutLineBeginOfFrame']
         elif self.binMode == "HW" and self.binning <= 3:
             self.camera.set_control_value(asi.ASI_HARDWARE_BIN, 1)
@@ -155,25 +155,25 @@ class CameraWrapper():
         if camera_settings['ROI']['fullFrame']:
             maxWidth = cameraInfo['MaxWidth']
             maxHeight = cameraInfo['MaxHeight']
-            newHeight = maxHeight / binning
+            newHeight = maxHeight / self.binning
             newHeight = int(newHeight - (newHeight % 2))
-            newWidth = maxWidth / binning
+            newWidth = maxWidth / self.binning
             newWidth = int(newWidth - (newWidth % 8))
             startPosX = 0
             startPosY = 0
             if bitDepth == 16:
-                self.camera.set_roi(startPosX, startPosY, newWidth, newHeight, binning, asi.ASI_IMG_RAW16)
+                self.camera.set_roi(startPosX, startPosY, newWidth, newHeight, self.binning, asi.ASI_IMG_RAW16)
             elif bitDepth == 8:
-                self.camera.set_roi(startPosX, startPosY, newWidth, newHeight, binning, asi.ASI_IMG_RAW8)
+                self.camera.set_roi(startPosX, startPosY, newWidth, newHeight, self.binning, asi.ASI_IMG_RAW8)
         else:
             newWidth = camera_settings['ROI']['numX']
             newHeight = camera_settings['ROI']['numY']
             startPosX = camera_settings['ROI']['startX']
             startPosY = camera_settings['ROI']['startY']
             if bitDepth == 16:
-                self.camera.set_roi(startPosX, startPosY, newWidth, newHeight, binning, asi.ASI_IMG_RAW16)
+                self.camera.set_roi(startPosX, startPosY, newWidth, newHeight, self.binning, asi.ASI_IMG_RAW16)
             elif bitDepth == 8:
-                self.camera.set_roi(startPosX, startPosY, newWidth, newHeight, binning, asi.ASI_IMG_RAW8)
+                self.camera.set_roi(startPosX, startPosY, newWidth, newHeight, self.binning, asi.ASI_IMG_RAW8)
         self.camera_roi = self.camera.get_roi()
         self.imageWidth = self.camera_roi[2]
         self.imageHeight = self.camera_roi[3]
@@ -249,12 +249,10 @@ class CameraWrapper():
             imgBuffer = self.camera.get_data_after_exposure()
 
             if self.bitDepth == 8:
-                imgDataType = np.uint8
                 nda = np.frombuffer(imgBuffer, dtype=np.uint8).reshape((self.imageHeight, self.imageWidth))
                 nda = nda.astype(
                     np.uint16 * 257)  # Scale 8-bit to 16-bit, because some FITS viewers don't support 8-bit images
             elif self.bitDepth == 16:
-                imgDataType = np.uint16
                 nda = np.frombuffer(imgBuffer, dtype=np.uint16).reshape((self.imageHeight, self.imageWidth))
             hdr = fits.Header()
             date_obs = currentDate.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]

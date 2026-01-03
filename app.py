@@ -17,7 +17,7 @@ try:
     # import matplotlib.pyplot as plt
     from skyfield.api import load as sky_load
 
-    from utils.configManager import MISSION_PLAN_PATH, EPHEMERIDES_PATH, OGS_TLE_FILE
+    from utils.configManager import MISSION_PLAN_PATH, TRACKING_PATH, OGS_TLE_FILE
     import preprocessing as pre
     import freeflyer as ff
     import tracking
@@ -70,15 +70,17 @@ class APP(tk.Tk):
         self.use_spaceTrack_TLEs = tk.BooleanVar(value=True)
         self.sat_tree = None # will be ttk.Treeview
         self.mission_runner = ff.MissionPlanRunner()
-        self.eph_preview = None # will be st.ScrolledText
-        self.eph_file = None # will be string of filepath
+        self.eph_tle_preview = None # will be st.ScrolledText
+        self.eph_tle_file = None # will be string of filepath
         self.tle_age_info = tk.StringVar(value=f"TLE sources are {pre.get_TLE_data_aga(ogs_flag=False)} days old")
         self.tel_conn_status_label = None # will be tk.Label (tk instead of ttk because coloring is easier)
         self.telescope = tracking.TelescopeWrapper()
         self.tracking_status_label = None # will be tk.Label (tk instead of ttk because coloring is easier)
         self.camera = camera.CameraWrapper()
+        self.current_mjd = tk.StringVar(value="Not connected")
         self.current_Azi = tk.StringVar(value="Not connected")
         self.current_Elev = tk.StringVar(value="Not connected")
+        self.tracking_tle_only_flag = False # flag indicates whether to use just TLE as data or a full eph for tracking
 
 
         # threads
@@ -299,16 +301,16 @@ class APP(tk.Tk):
         os.mkdir(os.path.join(MISSION_PLAN_PATH, "tmp")) # eph files will be put there
         self.mission_runner.run_SGP4_EPH_plan(durationMin, startTimeString)
         if self.mission_runner.missionplan_success_flag:
-            # now there exist files called "ASATrackingData_xy.txt"
-            eph_dir = os.path.join(EPHEMERIDES_PATH, start_time.utc_strftime(f"%Y%b%d__%H_%M__{durationMin}"))
+            # now there exist files called "ASATrackingData_xy.eph" and "ASATrackingData_xy.tle"
+            eph_dir = os.path.join(TRACKING_PATH, start_time.utc_strftime(f"%Y%b%d__%H_%M__{durationMin}"))
             # check if dir exits:
             if not os.path.isdir(eph_dir):
                 os.mkdir(eph_dir) # create if non-existing
-            for eph_file in os.listdir(os.path.join(MISSION_PLAN_PATH, "tmp")):
-                if eph_file.startswith("ASATrackingData"):
-                    shutil.move(os.path.join(MISSION_PLAN_PATH, "tmp", eph_file), str(eph_dir))
+            for file in os.listdir(os.path.join(MISSION_PLAN_PATH, "tmp")):
+                if file.startswith("ASATrackingData"):
+                    shutil.move(os.path.join(MISSION_PLAN_PATH, "tmp", file), str(eph_dir))
             # moved all eph files
-            mbox.showinfo("Info", "Generated Ephemerides!")
+            mbox.showinfo("Info", "Generated Ephemerides and TLEs!")
         else:
             mbox.showerror("Error", message=
                             f"There was an error while executing the missionplan:\n{self.mission_runner.error_msg}")
@@ -323,14 +325,14 @@ class APP(tk.Tk):
         self.tracking_tab.columnconfigure(0, weight=1)
         self.tracking_tab.rowconfigure(0, weight=0)
 
-        # will have two zones: eph selection and telescope
-        ## eph selection and preview setup
-        self.eph_frame = ttk.LabelFrame(self.tracking_tab, text="Ephemeris selection and inspection")
-        ttk.Button(self.eph_frame, text="Select Ephemeris file", command=self._select_eph_file) \
+        # will have two zones: eph/tle selection and telescope
+        ## eph/tle selection and preview setup
+        self.eph_tle_frame = ttk.LabelFrame(self.tracking_tab, text="Ephemeris/TLE selection and inspection")
+        ttk.Button(self.eph_tle_frame, text="Select Ephemeris/TLE file", command=self._select_eph_tle_file) \
             .pack(padx=self.WIDGET_PADX, pady=self.WIDGET_PADY, expand=True, fill='x')
-        self.eph_preview = st.ScrolledText(self.eph_frame, width=90, height=20)
-        self.eph_preview.pack(padx=self.WIDGET_PADX, pady=self.WIDGET_PADY, fill='x')
-        self.eph_frame.grid(row=0, column=0, columnspan=1)
+        self.eph_tle_preview = st.ScrolledText(self.eph_tle_frame, width=90, height=20)
+        self.eph_tle_preview.pack(padx=self.WIDGET_PADX, pady=self.WIDGET_PADY, fill='x')
+        self.eph_tle_frame.grid(row=0, column=0, columnspan=1)
 
         # telescope, camera and tracking options
         self.telescope_frame = ttk.LabelFrame(self.tracking_tab, text="Telescope & Camera connection, tracking interface")
@@ -351,10 +353,12 @@ class APP(tk.Tk):
         self.tracking_status_label = tk.Label(self.telescope_frame, text="Not Tracking", bg="red")
         self.tracking_status_label.grid(row=2, column=1)
 
-        ttk.Label(self.telescope_frame, text="Current Azimuth (deg):").grid(row=0, column=3)
-        ttk.Label(self.telescope_frame, text="Current Elevation (deg):").grid(row=1, column=3)
-        ttk.Label(self.telescope_frame, textvariable=self.current_Azi).grid(row=0, column=4)
-        ttk.Label(self.telescope_frame, textvariable=self.current_Elev).grid(row=1, column=4)
+        ttk.Label(self.telescope_frame, text="Current Epoch (mjd):").grid(row=0, column=3)
+        ttk.Label(self.telescope_frame, text="Current Azimuth (deg):").grid(row=1, column=3)
+        ttk.Label(self.telescope_frame, text="Current Elevation (deg):").grid(row=2, column=3)
+        ttk.Label(self.telescope_frame, textvariable=self.current_mjd).grid(row=0, column=4)
+        ttk.Label(self.telescope_frame, textvariable=self.current_Azi).grid(row=1, column=4)
+        ttk.Label(self.telescope_frame, textvariable=self.current_Elev).grid(row=2, column=4)
 
         for widget in self.telescope_frame.winfo_children():
             widget.grid_configure(padx=self.WIDGET_PADX, pady=self.WIDGET_PADY, sticky="nesw")
@@ -366,18 +370,25 @@ class APP(tk.Tk):
             widget.grid_configure(padx=self.WIDGET_PADX, pady=self.WIDGET_PADY, sticky='NESW')
         self.master_tab_holder.add(self.tracking_tab, text='Tracking', sticky='NSEW')
 
-    def _select_eph_file(self):
-        self.eph_preview.configure(state="normal")
-        self.eph_preview.delete("1.0", "end")
-        self.eph_file = filedialog.askopenfilename(title="Select ephemeris file",
-                                                   filetypes=[("Ephemeris Files", ".eph")])
+    def _select_eph_tle_file(self):
+        self.eph_tle_preview.configure(state="normal")
+        self.eph_tle_preview.delete("1.0", "end")
+        self.eph_tle_file = filedialog.askopenfilename(title="Select ephemeris/tle file",
+                                                       filetypes=[("Ephemeris Files", ".eph"),
+                                                                  ("TLE Files", ".tle")],
+                                                       initialdir=TRACKING_PATH
+                                                       )
 
-        if os.path.exists(self.eph_file): # check if file has been chosen
+        if os.path.exists(self.eph_tle_file): # check if file has been chosen
+            if self.eph_tle_file.endswith(".tle"):
+                self.tracking_tle_only_flag = True
+            else:
+                self.tracking_tle_only_flag = False
             # Inserting eph data which is read only
-            with open(self.eph_file) as f:
-                self.eph_preview.insert("1.0", f.read())
+            with open(self.eph_tle_file) as f:
+                self.eph_tle_preview.insert("1.0", f.read())
         # Making the text read only
-        self.eph_preview.configure(state='disabled')
+        self.eph_tle_preview.configure(state='disabled')
 
     def _toggle_telescope_conn(self):
         if self.telescope.connected_flag:
@@ -437,8 +448,8 @@ class APP(tk.Tk):
             if not mbox.askokcancel(message="Camera is not connected, do you really want to track without imaging?"):
                 return
 
-        if self.telescope.connected_flag and self.eph_file is not None and os.path.exists(self.eph_file):
-            err_msg = self.telescope.start_track(self.eph_file)
+        if self.telescope.connected_flag and self.eph_tle_file is not None and os.path.exists(self.eph_tle_file):
+            err_msg = self.telescope.start_track(self.eph_tle_file, self.tracking_tle_only_flag)
             if err_msg is not None:
                 mbox.showerror(title="Error", message=err_msg)
             else:
@@ -471,6 +482,7 @@ class APP(tk.Tk):
                 if self.telescope.tracking_bit != 1: # stopped tracking
                     self.after(0, self.update_tracking_label, "Finished Tracking", "yellow")
                     self.telescope.tracking_flag = False
+            self.after(0, self.current_mjd.set, f"{self.telescope.mjd:.8f}")
             self.after(0, self.current_Azi.set, f"{self.telescope.AZ_deg:.8f}")
             self.after(0, self.current_Elev.set,f"{self.telescope.EL_deg:.8f}")
             sleep(0.5)
@@ -478,7 +490,7 @@ class APP(tk.Tk):
     def _take_images(self):
         if self.camera.connected_flag:
             # create directory for imaging
-            track_path, eph_file = os.path.split(self.eph_file)
+            track_path, eph_file = os.path.split(self.eph_tle_file)
             eph_name = eph_file[16:-4] # get name of file without 'ASATrackingData_' and '.eph'
             fits_path = os.path.join(track_path, eph_name)
             os.mkdir(fits_path)
