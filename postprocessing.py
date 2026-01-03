@@ -210,17 +210,17 @@ def camera_to_altaz_projection(u, v, fx=0.424574272713/3600, fy=0.424574272713/3
     return alt, az
 
 
-def compare_tracking_to_ephemeris(tracking_csv, eph_file, tracking_label="Measured", eph_label="Base Ephemeris",
+def compare_tracking_to_ephemeris(tracking_csv_list, eph_base_file, tracking_label_list, eph_label="Base Eph",
                                   title="Comparison"):
     """
-    :param tracking_csv: Path to CSV file with tracking data (MJD;Az;Alt)
-    :type tracking_csv: str
+    :param tracking_csv_list: List of paths to CSV files with tracking data (MJD;Az;Alt)
+    :type tracking_csv_list: List[str]
 
-    :param eph_file: Path to ephemeris file (.eph) containing MJD, AZI, ELE
-    :type eph_file: str
+    :param eph_base_file: Path to ephemeris file (.eph) containing MJD, AZI, ELE
+    :type eph_base_file: str
 
-    :param tracking_label: Label for measured tracking data
-    :type tracking_label: str
+    :param tracking_label_list: List of label for measured tracking data
+    :type tracking_label_list: List[str]
 
     :param eph_label: Label for ephemeris data
     :type eph_label: str
@@ -229,48 +229,56 @@ def compare_tracking_to_ephemeris(tracking_csv, eph_file, tracking_label="Measur
     :type title: str
     """
 
+    csv_data_list = []
     # ---------- Load tracking data ----------
-    tracking_data = np.loadtxt(tracking_csv, delimiter=";", skiprows=1)
-    mjd_track, az_track, alt_track = tracking_data.T
-
-    # Convert MJD to relative time [seconds]
-    t0 = mjd_track[0]
-    t_track = (mjd_track - t0) * 86400.0
-
-    # ---------- Load ephemeris data ----------
-    eph_data = np.loadtxt(eph_file)
-    mjd_eph = eph_data[:, 0]
-    az_eph = eph_data[:, 5]
-    alt_eph = eph_data[:, 6]
-
-    # Convert MJD → relative time [seconds]
-    t_eph = (mjd_eph - t0) * 86400.0
-
-    # ---------- Plot Azimuth ----------
-    plt.figure(figsize=(10, 6))
-    plt.plot(t_track, az_track, label=tracking_label)
-    plt.plot(t_eph, az_eph, "--", label=eph_label)
-    plt.title(title+": Azimuth")
-
-    plt.xlabel("Time since start [s]")
-    plt.ylabel("Azimuth [deg]")
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.show()
-
-    # ---------- Plot Altitude ----------
-    plt.figure(figsize=(10, 6))
-    plt.plot(t_track, alt_track, label=tracking_label)
-    plt.plot(t_eph, alt_eph, "--", label=eph_label)
-    plt.title(title+": Altitude")
-
-    plt.xlabel("Time since start [s]")
-    plt.ylabel("Altitude [deg]")
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.show()
+    for file_path in tracking_csv_list:
+        tracking_data = np.loadtxt(file_path, delimiter=";", skiprows=1)
+        mjd_track, az_track, alt_track = tracking_data.T
+    #
+    #     csv_data_list.append((mjd_track, az_track, alt_track))
+    #
+    # #
+    # # # Convert MJD to relative time [seconds]
+    # # t0 = mjd_track[0]
+    # # t_track = (mjd_track - t0) * 86400.0
+    #
+    # # ---------- Load ephemeris data ----------
+    # eph_data = np.loadtxt(eph_base_file)
+    # mjd_eph = eph_data[:, 0]
+    # az_eph = eph_data[:, 5]
+    # alt_eph = eph_data[:, 6]
+    #
+    # # # Convert MJD → relative time [seconds]
+    # # t_eph = (mjd_eph - t0) * 86400.0
+    #
+    # fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(10, 6), sharex=True)
+    # az_ax, alt_ax2 = axes
+    # for data, label in zip(csv_data_list, tracking_label_list):
+    #     mjd_track, az_track, alt_track = data
+    #     az_ax.plot()
+    #     plt.plot(mjd_track, az_track, label=label)
+    # plt.plot(mjd_eph, az_eph, "--", label=eph_label)
+    # plt.title(title+": Azimuth")
+    #
+    # plt.xlabel("Time since start [s]")
+    # plt.ylabel("Azimuth [deg]")
+    # plt.legend()
+    # plt.grid(True, alpha=0.3)
+    # plt.tight_layout()
+    # plt.show()
+    #
+    # # ---------- Plot Altitude ----------
+    # plt.figure(figsize=(10, 6))
+    # plt.plot(t_track, alt_track, label=tracking_label_list)
+    # plt.plot(t_eph, alt_eph, "--", label=eph_label)
+    # plt.title(title+": Altitude")
+    #
+    # plt.xlabel("Time since start [s]")
+    # plt.ylabel("Altitude [deg]")
+    # plt.legend()
+    # plt.grid(True, alpha=0.3)
+    # plt.tight_layout()
+    # plt.show()
 
 
 def delay_ephemeris(eph_file, output_file, delay_minutes=10):
@@ -301,7 +309,7 @@ def delay_ephemeris(eph_file, output_file, delay_minutes=10):
 
                 mjd_delayed = mjd + delay_days
                 # Reformat line: first column delayed, rest unchanged
-                new_line = f"{mjd_delayed:13.8f}" + line[13:]
+                new_line = f"{mjd_delayed:14.8f}" + line[14:]
                 fout.write(new_line)
 
 
@@ -385,8 +393,10 @@ if __name__ == "__main__":
     # compare_tracking_to_ephemeris(tracking_csv=eph_based_csv, eph_file=eph_based_source, title="Tracking based on Ephemeris")
     # compare_tracking_to_ephemeris(tracking_csv=tle_based_csv, eph_file=tle_based_source, title="Tracking based on TLE")
 
-    original_eph_path = ".\\tracking\\2026Jan03__18_51__90\\ASATrackingData_HAIYANG-2C.eph"
-    delayed_file_path = ".\\tracking\\2026Jan03__18_51__90\\ASATrackingData_HAIYANG-2C_delayed.eph"
+    original_eph_path = ".\\tracking\\2026Jan03__19_09__90\\ASATrackingData_COSMOS-1506.eph"
+    delayed_file_path = ".\\tracking\\2026Jan03__19_09__90\\ASATrackingData_COSMOS-1506_delayed.eph"
+
+
     delay_ephemeris(original_eph_path, delayed_file_path, 10)
 
 
