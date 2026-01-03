@@ -2,4 +2,6 @@
 __pycache__
 de421.bsp
 */__pycache__
-missionplans
+missionplans/*
+!missionplans
+!missionplans/.gitkeep
