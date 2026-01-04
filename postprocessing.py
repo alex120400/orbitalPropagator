@@ -2,11 +2,6 @@
 # -) show fits files and their headers
 # -) process fits files to calculate the centroid and center-distance of the satellite within the image
 # -) convert pixel offsets to altitude and azimuth offsets
-# -) plot a given list of trackingReport (csv) files and compare their tracking progress
-# processes each video frame and calculates the distances between center of the
-# minimal enclosing circle for each contour
-# and the center of the picture
-
 import numpy as np
 import os
 from astropy.io import fits
@@ -210,109 +205,6 @@ def camera_to_altaz_projection(u, v, fx=0.424574272713/3600, fy=0.424574272713/3
     return alt, az
 
 
-def compare_tracking_to_ephemeris(tracking_csv_list, eph_base_file, tracking_label_list, eph_label="Base Eph",
-                                  title="Comparison"):
-    """
-    :param tracking_csv_list: List of paths to CSV files with tracking data (MJD;Az;Alt)
-    :type tracking_csv_list: List[str]
-
-    :param eph_base_file: Path to ephemeris file (.eph) containing MJD, AZI, ELE
-    :type eph_base_file: str
-
-    :param tracking_label_list: List of label for measured tracking data
-    :type tracking_label_list: List[str]
-
-    :param eph_label: Label for ephemeris data
-    :type eph_label: str
-
-    :param title: title of overall figure
-    :type title: str
-    """
-
-    csv_data_list = []
-    # ---------- Load tracking data ----------
-    for file_path in tracking_csv_list:
-        tracking_data = np.loadtxt(file_path, delimiter=";", skiprows=1)
-        mjd_track, az_track, alt_track = tracking_data.T
-    #
-    #     csv_data_list.append((mjd_track, az_track, alt_track))
-    #
-    # #
-    # # # Convert MJD to relative time [seconds]
-    # # t0 = mjd_track[0]
-    # # t_track = (mjd_track - t0) * 86400.0
-    #
-    # # ---------- Load ephemeris data ----------
-    # eph_data = np.loadtxt(eph_base_file)
-    # mjd_eph = eph_data[:, 0]
-    # az_eph = eph_data[:, 5]
-    # alt_eph = eph_data[:, 6]
-    #
-    # # # Convert MJD → relative time [seconds]
-    # # t_eph = (mjd_eph - t0) * 86400.0
-    #
-    # fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(10, 6), sharex=True)
-    # az_ax, alt_ax2 = axes
-    # for data, label in zip(csv_data_list, tracking_label_list):
-    #     mjd_track, az_track, alt_track = data
-    #     az_ax.plot()
-    #     plt.plot(mjd_track, az_track, label=label)
-    # plt.plot(mjd_eph, az_eph, "--", label=eph_label)
-    # plt.title(title+": Azimuth")
-    #
-    # plt.xlabel("Time since start [s]")
-    # plt.ylabel("Azimuth [deg]")
-    # plt.legend()
-    # plt.grid(True, alpha=0.3)
-    # plt.tight_layout()
-    # plt.show()
-    #
-    # # ---------- Plot Altitude ----------
-    # plt.figure(figsize=(10, 6))
-    # plt.plot(t_track, alt_track, label=tracking_label_list)
-    # plt.plot(t_eph, alt_eph, "--", label=eph_label)
-    # plt.title(title+": Altitude")
-    #
-    # plt.xlabel("Time since start [s]")
-    # plt.ylabel("Altitude [deg]")
-    # plt.legend()
-    # plt.grid(True, alpha=0.3)
-    # plt.tight_layout()
-    # plt.show()
-
-
-def delay_ephemeris(eph_file, output_file, delay_minutes=10):
-    """
-    :param eph_file: Path to the original ephemeris file (.eph)
-    :type eph_file: str
-
-    :param output_file: Path to save the delayed ephemeris file
-    :type output_file: str
-
-    :param delay_minutes: Delay to add to each epoch in minutes
-    :type delay_minutes: float
-    """
-
-    # Convert minutes to days
-    delay_days = delay_minutes / (24 * 60)
-
-    with open(eph_file, "r") as fin, open(output_file, "w") as fout:
-        for line in fin:
-            stripped = line.strip()
-            if stripped.startswith("#") or len(stripped) == 0:
-                # Keep comments and empty lines unchanged
-                fout.write(line)
-            else:
-                # Split numeric columns, add delay to first column (MJD)
-                parts = line.split()
-                mjd = float(parts[0])
-
-                mjd_delayed = mjd + delay_days
-                # Reformat line: first column delayed, rest unchanged
-                new_line = f"{mjd_delayed:14.8f}" + line[14:]
-                fout.write(new_line)
-
-
 def scan_entire_fits_folder(fits_folder_path):
     with os.scandir(fits_folder_path) as entries:
         i = 0
@@ -378,26 +270,10 @@ def scan_entire_fits_folder(fits_folder_path):
 if __name__ == "__main__":
     fits_folder = "..\\..\\Beispielüberflüge\\AJISAI_CPF_002"
 
-    # eph_based_csv = ".\\tracking\\2026Jan03__17_24__90\\trackingReport_CHUANG-XIN-1-03.csv"
-    # tle_based_csv = ".\\tracking\\2026Jan03__17_24__90\\trackingReport_FENGYUN-3B.csv"
-    #
-    # eph_based_source = ".\\tracking\\2026Jan03__17_24__90\\ASATrackingData_CHUANG-XIN-1-03.eph"
-    # tle_based_source = ".\\tracking\\2026Jan03__17_24__90\\ASATrackingData_FENGYUN-3B.eph"
-
-    # eph_based_csv = ".\\tracking\\2026Jan03__18_04__90\\trackingReport_SCOUT-B-1-R-B.csv"
-    # tle_based_csv = ".\\tracking\\2026Jan03__18_04__90\\trackingReport_VENUS.csv"
-    #
-    # eph_based_source = ".\\tracking\\2026Jan03__18_04__90\\ASATrackingData_SCOUT-B-1-R-B.eph"
-    # tle_based_source = ".\\tracking\\2026Jan03__18_04__90\\ASATrackingData_VENUS.eph"
-    #
-    # compare_tracking_to_ephemeris(tracking_csv=eph_based_csv, eph_file=eph_based_source, title="Tracking based on Ephemeris")
-    # compare_tracking_to_ephemeris(tracking_csv=tle_based_csv, eph_file=tle_based_source, title="Tracking based on TLE")
-
-    original_eph_path = ".\\tracking\\2026Jan03__19_09__90\\ASATrackingData_COSMOS-1506.eph"
-    delayed_file_path = ".\\tracking\\2026Jan03__19_09__90\\ASATrackingData_COSMOS-1506_delayed.eph"
+    scan_entire_fits_folder(fits_folder)
 
 
-    delay_ephemeris(original_eph_path, delayed_file_path, 10)
+
 
 
 

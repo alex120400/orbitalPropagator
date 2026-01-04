@@ -55,11 +55,13 @@ class TelescopeWrapper():
 
         try:
             if tle_only_flag:
+                print("Starting track based on TLE input")
                 # send TLE data to telescope
                 self._telescope.Action("sat:name", lines[0][2:]) # ignore '0 ' at beginning
                 self._telescope.Action("sat:line1", lines[1]) # TLE Line 1
                 self._telescope.Action("sat:line2", lines[2]) # TLE Line 2
             else:
+                print("Starting track based on EPH input")
                 # Serialize the list of lines to JSON
                 lines_list_serialized = json.dumps(lines)
                 self._telescope.Action("sat:ephlines", lines_list_serialized)

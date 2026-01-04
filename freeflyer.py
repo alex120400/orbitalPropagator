@@ -45,9 +45,9 @@ class MissionPlanRunner:
             print(f"Error while updating EOP and SW:\n{str(e)}")
 
     def run_SGP4_EPH_plan(self, durationMin: float, startTimeUTCString: str):
-        """ Runs the sgp4_eph missionplan which creates eph files to track sgp4 propagated satellites """
+        """ Runs the sgp4_eph_simulated_tracking_data missionplan which creates eph files to track sgp4 propagated satellites """
 
-        mission_plan_path = os.path.join(MISSION_PLAN_PATH, "SGP4_EPH.MissionPlan")
+        mission_plan_path = os.path.join(MISSION_PLAN_PATH, "SGP4_EPH_simulated_tracking_data.MissionPlan")
 
         try:
             with RuntimeApiEngine(self.ff_install_dir) as engine:

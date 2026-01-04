@@ -11,6 +11,7 @@ try:
     import tkinter.ttk as ttk
     import numpy as np
     from time import sleep
+    import astropy.time as as_time
 
     # import scipy.fft as fft
     # from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
@@ -308,14 +309,38 @@ class APP(tk.Tk):
             if not os.path.isdir(eph_dir):
                 os.mkdir(eph_dir) # create if non-existing
             for file in os.listdir(os.path.join(MISSION_PLAN_PATH, "tmp")):
-                if file.startswith("ASATrackingData"):
-                    shutil.move(os.path.join(MISSION_PLAN_PATH, "tmp", file), str(eph_dir))
-            # moved all eph files
+                shutil.move(os.path.join(MISSION_PLAN_PATH, "tmp", file), str(eph_dir))
+            # moved all generated files
             mbox.showinfo("Info", "Generated Ephemerides and TLEs!")
         else:
             mbox.showerror("Error", message=
                             f"There was an error while executing the missionplan:\n{self.mission_runner.error_msg}")
         shutil.rmtree(os.path.join(MISSION_PLAN_PATH, "tmp"), ignore_errors=False)
+
+
+    @staticmethod
+    def convert_GO_to_TR(ground_obs_txt_file, tracking_rep_csv_file):
+        # Load azi, alt and epoch data
+        data = np.loadtxt(ground_obs_txt_file, usecols=(2, 3, 4))
+        az, alt, mjd_tai_ff = data.T
+        # az and alt are in rad -> convert to degree
+        az = np.rad2deg(az)
+        alt = np.rad2deg(alt)
+        # epoch is TAI in Modified Julian format, freeflyer uses 1941 as reference instead of 1858 (asa)
+        # -> add 29999.5 to compensate years and subtract leap seconds
+        mjd_tai_asa = mjd_tai_ff + 29999.5
+        mjd_tai_asa = as_time.Time(mjd_tai_asa, format='mjd', scale='tai')
+        mjd_utc_asa = mjd_tai_asa.utc.mjd
+
+        converted_data = np.column_stack((mjd_utc_asa, az, alt))
+
+        np.savetxt(
+            tracking_rep_csv_file,
+            converted_data,
+            delimiter=";",
+            header="Epoch (mjd);Azimuth (deg),Elevation (deg)",
+            comments="",
+        )
 
 
     def _ff_od_eph(self):
