@@ -122,7 +122,7 @@ if __name__ == "__main__":
     delayed_eph_file = "ASATrackingData_RIGIDSPHERE-2-(LCS-4)_delayed.eph"
 
     # add delay of 17 h and 20 minutes to epochs in eph_base_file, run only once
-    delay_ephemeris(eph_base_file, delayed_eph_file, 17*60 + 20)
+    delay_ephemeris(eph_base_file, delayed_eph_file, 16*60 + 20)
 
     tle_track_file = "trackingReport_RIGIDSPHERE-2-(LCS-4).csv"
     #eph_track_file_delayed = "trackingReport_COSMOS-1506_delayed.csv"
