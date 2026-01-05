@@ -1,8 +1,14 @@
-aisolutions
+aisolutions/*
+!aisolutions
+!aisolutions/.gitkeep
+
 .idea
-__pycache__
-de421.bsp
+
+**/__pycache__/
 */__pycache__
+
+de421.bsp
+
 missionplans/*
 !missionplans
 !missionplans/.gitkeep
