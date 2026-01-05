@@ -16,12 +16,11 @@ def compare_tracking_to_ephemeris(tracking_csv_list, eph_base_file, tracking_lab
     :type eph_label: str
     """
 
-    csv_data_list = []
     # ---------- Load tracking data ----------
+    csv_data_list = []
     for file_path in tracking_csv_list:
         tracking_data = np.loadtxt(file_path, delimiter=";", skiprows=1)
         mjd_track, az_track, alt_track = tracking_data.T
-
         csv_data_list.append((mjd_track, az_track, alt_track))
 
     # ---------- Load ephemeris data ----------
@@ -34,16 +33,51 @@ def compare_tracking_to_ephemeris(tracking_csv_list, eph_base_file, tracking_lab
     fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(10, 6), sharex=True)
     fig.suptitle("Track measurements based on eph and tle compared against base ephemeris")
     az_ax, alt_ax = axes
-    for data, label in zip(csv_data_list, tracking_label_list):
-        mjd_track, az_track, alt_track = data
-        az_ax.plot(mjd_track, az_track, label=label)
-        alt_ax.plot(mjd_track, alt_track, label=label)
+
+    # Store line pairs per label
+    line_map = {}
+    # plot tracking curves
+    for (mjd, az, alt), label in zip(csv_data_list, tracking_label_list):
+        az_line, = az_ax.plot(mjd, az, label=label)
+        alt_line, = alt_ax.plot(mjd, alt, label=label)
+        line_map[label] = (az_line, alt_line)
+
     for ax, eph, y_label in zip([az_ax, alt_ax], [az_eph, alt_eph], ["Azimuth [deg]", "Altitude [deg]"]):
         ax.plot(mjd_eph, eph, "--", label=eph_label)
         ax.set_ylabel(y_label)
         ax.legend()
         ax.grid(True, alpha=0.3)
+
     alt_ax.set_xlabel("Epoch [mjd]")
+
+    # ---------- Interactive legend ----------
+    leg = az_ax.legend()
+    for legline in leg.get_lines():
+        legline.set_picker(True)
+        legline.set_pickradius(5)
+
+    label_from_legend = {
+        legline: text.get_text()
+        for legline, text in zip(leg.get_lines(), leg.get_texts())
+    }
+
+    def on_pick(event):
+        legline = event.artist
+        label = label_from_legend[legline]
+
+        if label not in line_map:
+            return
+
+        az_line, alt_line = line_map[label]
+        visible = not az_line.get_visible()
+
+        az_line.set_visible(visible)
+        alt_line.set_visible(visible)
+
+        legline.set_alpha(1.0 if visible else 0.2)
+        fig.canvas.draw_idle()
+
+    fig.canvas.mpl_connect("pick_event", on_pick)
     plt.tight_layout()
     plt.show()
 
@@ -121,20 +155,25 @@ if __name__ == "__main__":
     eph_base_file = "ASATrackingData_RIGIDSPHERE-2-(LCS-4).eph"
     delayed_eph_file = "ASATrackingData_RIGIDSPHERE-2-(LCS-4)_delayed.eph"
 
-    # add delay of 17 h and 20 minutes to epochs in eph_base_file, run only once
-    delay_ephemeris(eph_base_file, delayed_eph_file, 16*60 + 20)
+    # add delay of 16 h and 20 minutes to epochs in eph_base_file, run only once
+    # delay_ephemeris(eph_base_file, delayed_eph_file, 16*60 + 20)
 
-    tle_track_file = "trackingReport_RIGIDSPHERE-2-(LCS-4).csv"
-    #eph_track_file_delayed = "trackingReport_COSMOS-1506_delayed.csv"
-    #eph_track_file_delay_reversed = "trackingReport_COSMOS-1506_delay_reversed.csv"
-    ff_observation_track_w_lc_file = "FFGroundObservations_RIGIDSPHERE-2-(LCS-4)_with_light_corrections_converted.csv"
-    ff_observation_track_wo_lc_file = "FFGroundObservations_RIGIDSPHERE-2-(LCS-4)_without_light_corrections_converted.csv"
+    tle_track_file = "trackingReport_RIGIDSPHERE-2-(LCS-4)_tle_based.csv"
+    # eph_track_file_delayed = "trackingReport_RIGIDSPHERE-2-(LCS-4)_eph_based_delayed.csv"
+    eph_track_file_delay_reversed = "trackingReport_RIGIDSPHERE-2-(LCS-4)_eph_based_delay_reversed.csv"
+    ff_observation_track_w_li_c_file = "FFGroundObservations_RIGIDSPHERE-2-(LCS-4)_w_li_c_converted.csv"
+    ff_observation_track_w_to_c_file = "FFGroundObservations_RIGIDSPHERE-2-(LCS-4)_w_to_c_converted.csv"
+    ff_observation_track_wo_c_file = "FFGroundObservations_RIGIDSPHERE-2-(LCS-4)_wo_corrections_converted.csv"
 
-    # remove delay of 10 minutes from epochs in measured csv track file, run only once
-    # reverse_delay_csv(eph_track_file_delayed, eph_track_file_delay_reversed, 10)
+    # remove delay of 16 h and 20 minutes from epochs in measured csv track file, run only once
+    # reverse_delay_csv(eph_track_file_delayed, eph_track_file_delay_reversed, 16*60 + 20)
 
-    # compare_tracking_to_ephemeris(
-    #     [tle_track_file, ff_observation_track_w_lc_file, ff_observation_track_wo_lc_file],
-    #     eph_base_file,
-    #     ["TLE based track", "ff obs w lc", "ff obs wo lc"]
-    # )
+    compare_tracking_to_ephemeris(
+        [tle_track_file, eph_track_file_delay_reversed,
+         ff_observation_track_w_li_c_file, ff_observation_track_w_to_c_file,
+         ff_observation_track_wo_c_file],
+        eph_base_file,
+        ["TLE based track", "Eph based track",
+                        "ff obs w li c", "ff obs w to c",
+                        "ff obs wo corr"]
+    )

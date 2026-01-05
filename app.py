@@ -302,20 +302,20 @@ class APP(tk.Tk):
         startTimeString = start_time.utc_strftime("%b %d %Y %H:%M:%S")
         os.mkdir(os.path.join(MISSION_PLAN_PATH, "tmp")) # eph files will be put there
         self.mission_runner.run_SGP4_EPH_plan(durationMin, startTimeString)
-        # if self.mission_runner.missionplan_success_flag:
-        #     # now there exist files called "ASATrackingData_xy.eph" and "ASATrackingData_xy.tle"
-        #     eph_dir = os.path.join(TRACKING_PATH, start_time.utc_strftime(f"%Y%b%d__%H_%M__{durationMin}"))
-        #     # check if dir exits:
-        #     if not os.path.isdir(eph_dir):
-        #         os.mkdir(eph_dir) # create if non-existing
-        #     for file in os.listdir(os.path.join(MISSION_PLAN_PATH, "tmp")):
-        #         shutil.move(os.path.join(MISSION_PLAN_PATH, "tmp", file), str(eph_dir))
-        #     # moved all generated files
-        #     mbox.showinfo("Info", "Generated Ephemerides and TLEs!")
-        # else:
-        #     mbox.showerror("Error", message=
-        #                     f"There was an error while executing the missionplan:\n{self.mission_runner.error_msg}")
-        # shutil.rmtree(os.path.join(MISSION_PLAN_PATH, "tmp"), ignore_errors=False)
+        if self.mission_runner.missionplan_success_flag:
+            # now there exist files called "ASATrackingData_xy.eph" and "ASATrackingData_xy.tle"
+            eph_dir = os.path.join(TRACKING_PATH, start_time.utc_strftime(f"%Y%b%d__%H_%M__{durationMin}"))
+            # check if dir exits:
+            if not os.path.isdir(eph_dir):
+                os.mkdir(eph_dir) # create if non-existing
+            for file in os.listdir(os.path.join(MISSION_PLAN_PATH, "tmp")):
+                shutil.move(os.path.join(MISSION_PLAN_PATH, "tmp", file), str(eph_dir))
+            # moved all generated files
+            mbox.showinfo("Info", "Generated Ephemerides and TLEs!")
+        else:
+            mbox.showerror("Error", message=
+                            f"There was an error while executing the missionplan:\n{self.mission_runner.error_msg}")
+        shutil.rmtree(os.path.join(MISSION_PLAN_PATH, "tmp"), ignore_errors=False)
 
 
     @staticmethod
