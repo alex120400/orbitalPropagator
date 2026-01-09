@@ -1,5 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.signal import savgol_filter
+
+# window length must be odd and > polynomial order
+window = 21       # tune based on sampling
+poly   = 3
 
 def compare_tracking_to_ephemeris(tracking_csv_list, eph_base_file, tracking_label_list, eph_label="Base Eph"):
     """
@@ -153,24 +158,81 @@ def reverse_delay_csv(csv_file, output_file, delay_minutes=10):
 
 if __name__ == "__main__":
     eph_base_file = "ASATrackingData_STARLINK-1364.eph"
+    eph_base_file_wo_corr = "ASATrackingData_STARLINK-1364_wo_corr.eph"
     delayed_eph_file = "ASATrackingData_STARLINK-1364_delayed.eph"
+    delayed_eph_file_wo_corr = "ASATrackingData_STARLINK-1364_wo_corr_delayed.eph"
 
     # add delay of 10 minutes to epochs in eph_base_file, run only once
-    delay_ephemeris(eph_base_file, delayed_eph_file, 10)
+    delay_ephemeris(eph_base_file_wo_corr, delayed_eph_file_wo_corr, 3*60)
 
-    #tle_track_file = "trackingReport_RI"
-    #eph_track_file_delayed = "trackingReport_RIGIDSPHERE-2-(LCS-4)_eph_based_delayed.csv"
-    # eph_track_file_delay_reversed = "trackingReport_RIGIDSPHERE-2-(LCS-4)_eph_based_delay_reversed.csv"
-
-    # remove delay of 16 h and 20 minutes from epochs in measured csv track file, run only once
-    # reverse_delay_csv(eph_track_file_delayed, eph_track_file_delay_reversed, 16*60 + 20)
-
+    # tle_track_file = "trackingReport_STARLINK-1364.csv"
+    # eph_track_file_delayed = "trackingReport_STARLINK-1364_delayed.csv"
+    # eph_track_file_delay_reversed = "trackingReport_STARLINK-1364_delay_reversed.csv"
+    # ff_observation_track_wo_corr_file = "FFGroundObservations_STARLINK-1364_wo_corr_converted.csv"
+    #
+    # # remove delay of 10 minutes from epochs in measured csv track file, run only once
+    # # reverse_delay_csv(eph_track_file_delayed, eph_track_file_delay_reversed, 10)
+    #
     # compare_tracking_to_ephemeris(
-    #     [tle_track_file, eph_track_file_delay_reversed,
-    #      ff_observation_track_w_li_c_file, ff_observation_track_w_to_c_file,
-    #      ff_observation_track_wo_c_file],
+    #     [tle_track_file, eph_track_file_delay_reversed, ff_observation_track_wo_corr_file],
     #     eph_base_file,
-    #     ["TLE based track", "Eph based track",
-    #                     "ff obs w li c", "ff obs w to c",
-    #                     "ff obs wo corr"]
+    #     ["TLE based track", "Eph based track (w lt c)", "FF obs wo corrs"]
     # )
+    #
+    # # ---------- Compare tracking data ----------
+    # eph_tracking_data = np.loadtxt(eph_track_file_delay_reversed, delimiter=";", skiprows=1)
+    # eph_mjd_track, eph_az_track, eph_alt_track = eph_tracking_data.T
+    #
+    # tle_tracking_data = np.loadtxt(tle_track_file, delimiter=";", skiprows=1)
+    # tle_mjd_track, tle_az_track, tle_alt_track = tle_tracking_data.T
+    #
+    # t_start = max(tle_mjd_track[0], eph_mjd_track[0])
+    # t_end = min(tle_mjd_track[-1], eph_mjd_track[-1])
+    #
+    # tle_mask = (tle_mjd_track >= t_start) & (tle_mjd_track <= t_end)
+    # eph_mask = (eph_mjd_track >= t_start) & (eph_mjd_track <= t_end)
+    #
+    # tle_mjd_track, tle_az_track, tle_alt_track = tle_mjd_track[tle_mask], tle_az_track[tle_mask], tle_alt_track[tle_mask]
+    # eph_mjd_track, eph_az_track, eph_alt_track = eph_mjd_track[eph_mask], eph_az_track[eph_mask], eph_alt_track[eph_mask]
+    #
+    # common_mjd = np.union1d(tle_mjd_track, eph_mjd_track)
+    # common_mjd = np.sort(common_mjd)
+    #
+    # tle_az_interp = np.interp(common_mjd, tle_mjd_track, tle_az_track)
+    # tle_alt_interp = np.interp(common_mjd, tle_mjd_track, tle_alt_track)
+    #
+    # eph_az_interp = np.interp(common_mjd, eph_mjd_track, eph_az_track)
+    # eph_alt_interp = np.interp(common_mjd, eph_mjd_track, eph_alt_track)
+    #
+    # tle_az_smooth = savgol_filter(tle_az_interp, window, poly)
+    # tle_alt_smooth = savgol_filter(tle_alt_interp, window, poly)
+    #
+    # eph_az_smooth = savgol_filter(eph_az_interp, window, poly)
+    # eph_alt_smooth = savgol_filter(eph_alt_interp, window, poly)
+    #
+    # delta_az = (tle_az_smooth - eph_az_smooth)
+    # delta_alt = (tle_alt_smooth - eph_alt_smooth)
+    # delta_az[np.argwhere(np.abs(delta_az) > 2)] = 0 # remove crazy high deltas at azimuth jump from 360° to 0°
+    #
+    # delta_az = delta_az * 3600
+    # delta_alt = delta_alt * 3600
+    # # ------------ plot deltas --------------
+    # plt.figure(figsize=(10, 6))
+    # plt.title("Tracking delta based on eph and tle")
+    # #plt.plot(common_mjd, tle_az_interp)
+    # #plt.plot(common_mjd, eph_az_interp)
+    # plt.plot(common_mjd, delta_az)
+    # plt.plot(common_mjd, delta_alt)
+    # plt.legend(["d_az", "d_alt"])
+    # plt.xlabel("Epoch [mjd]")
+    # plt.ylabel("Delta ['']")
+    # plt.tight_layout()
+    # plt.grid()
+    # plt.show()
+
+
+    # ---------- Load ephemeris data ----------
+    # eph_data = np.loadtxt(eph_base_file)
+    # mjd_eph = eph_data[:, 0]
+    # az_eph = eph_data[:, 5]
+    # alt_eph = eph_data[:, 6]

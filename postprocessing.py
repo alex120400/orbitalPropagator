@@ -149,10 +149,10 @@ def camera_to_altaz_projection(u, v, fx=0.424574272713/3600, fy=0.424574272713/3
     :param v: vertical Pixel coordinates
     :type v: float
 
-    :param fx: Conversion pixel -> arcsec (or focal scale) in x
+    :param fx: Conversion pixel -> degree (or focal scale) in x
     :type fx: float
 
-    :param fy: Conversion pixel -> arcsec (or focal scale) in y
+    :param fy: Conversion pixel -> degree (or focal scale) in y
     :type fy: float
 
     :param cx: Image horizontal center coordinate
