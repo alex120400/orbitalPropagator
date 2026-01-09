@@ -1,7 +1,3 @@
-aisolutions/*
-!aisolutions
-!aisolutions/.gitkeep
-
 .idea
 
 **/__pycache__/
