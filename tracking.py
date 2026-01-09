@@ -91,12 +91,11 @@ class TelescopeWrapper():
             # 'ErrornumberAxis1': 0, 'ErrornumberAxis2': 2304}
             # slewing-bit useful as it indicates whether telescope has arrived at waiting position or not
             self.slewing_bit = (self._tel_status['Status'] >> 2) # bit 2 is relevant
-            RA_deg, DE_deg = self._tel_status['RigthAscension'], self._tel_status['Declination']
+            # RA_deg, DE_deg = self._tel_status['RigthAscension'], self._tel_status['Declination']
             jd = self._tel_status['JulianDate']
             self.mjd = jd - 2400000.5 # might need adjustments
-            self.AZ_deg, self.EL_deg = self._topo_radec_to_azel(RA_deg, DE_deg, jd)
-
-
+            self.AZ_deg = self._telescope.Azimuth
+            self.EL_deg = self._telescope.Altitude
 
             # Ask the telescope for its sat_status as JSON
             json_string = self._telescope.CommandString("getSatStatus", True)

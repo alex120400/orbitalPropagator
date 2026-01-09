@@ -126,6 +126,7 @@ def create_satellite_data_list(startTime:sky.Time, durationMin:int, ogs_flag:boo
                     4: percentage of flight time in sunlight
                     5: distance to earth surface in km
                     6: maximum elevation in degree
+                    7: age of tle
                 satellite-dict:
                     keys: satellite NoradID's
                     item: Tuple with line0, line1, line2 as strings
@@ -200,11 +201,14 @@ def create_satellite_data_list(startTime:sky.Time, durationMin:int, ogs_flag:boo
                          startTime.utc.hour + durationMin // 60,
                          startTime.utc.minute + durationMin % 60
                          )
-
+    t_now = ts.now()
+    #print(f"now is {t_now}")
     for sat in satellites:
         name = sat.name
         # intDes = sat.intldesg
         noradID = sat.model.satnum_str + sat.model.classification
+        tle_age = t_now-sat.epoch
+
         height = (sat.model.a - 1) * sat.model.radiusearthkm # a is given in earth_radii
 
         t, events = sat.find_events(gnd_station, t0, t1, altitude_degrees=MIN_ALTITUDE_ElEVATION) #
@@ -246,7 +250,8 @@ def create_satellite_data_list(startTime:sky.Time, durationMin:int, ogs_flag:boo
         #if rise_time_delta is not None and set_time_delta is not None:
         satellite_data_list.append((name, noradID, f"{rise_time_delta:.2f} min", f"{flight_duration:.2f} min",
                                     f"{sunlit_percentage:.2f} %", f"{height:.2f} km",
-                                    f"{maximum_elevation:.2f} °" if maximum_elevation != 0 else "----"
+                                    f"{maximum_elevation:.2f} °" if maximum_elevation != 0 else "----",
+                                    f"{tle_age:.2f} days"
                                     ))
 
     return satellite_data_list, satellites_dict

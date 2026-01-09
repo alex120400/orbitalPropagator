@@ -152,28 +152,25 @@ def reverse_delay_csv(csv_file, output_file, delay_minutes=10):
 
 
 if __name__ == "__main__":
-    eph_base_file = "ASATrackingData_RIGIDSPHERE-2-(LCS-4).eph"
-    delayed_eph_file = "ASATrackingData_RIGIDSPHERE-2-(LCS-4)_delayed.eph"
+    eph_base_file = "ASATrackingData_STARLINK-1364.eph"
+    delayed_eph_file = "ASATrackingData_STARLINK-1364_delayed.eph"
 
-    # add delay of 16 h and 20 minutes to epochs in eph_base_file, run only once
-    # delay_ephemeris(eph_base_file, delayed_eph_file, 16*60 + 20)
+    # add delay of 10 minutes to epochs in eph_base_file, run only once
+    delay_ephemeris(eph_base_file, delayed_eph_file, 10)
 
-    tle_track_file = "trackingReport_RIGIDSPHERE-2-(LCS-4)_tle_based.csv"
-    # eph_track_file_delayed = "trackingReport_RIGIDSPHERE-2-(LCS-4)_eph_based_delayed.csv"
-    eph_track_file_delay_reversed = "trackingReport_RIGIDSPHERE-2-(LCS-4)_eph_based_delay_reversed.csv"
-    ff_observation_track_w_li_c_file = "FFGroundObservations_RIGIDSPHERE-2-(LCS-4)_w_li_c_converted.csv"
-    ff_observation_track_w_to_c_file = "FFGroundObservations_RIGIDSPHERE-2-(LCS-4)_w_to_c_converted.csv"
-    ff_observation_track_wo_c_file = "FFGroundObservations_RIGIDSPHERE-2-(LCS-4)_wo_corrections_converted.csv"
+    #tle_track_file = "trackingReport_RI"
+    #eph_track_file_delayed = "trackingReport_RIGIDSPHERE-2-(LCS-4)_eph_based_delayed.csv"
+    # eph_track_file_delay_reversed = "trackingReport_RIGIDSPHERE-2-(LCS-4)_eph_based_delay_reversed.csv"
 
     # remove delay of 16 h and 20 minutes from epochs in measured csv track file, run only once
     # reverse_delay_csv(eph_track_file_delayed, eph_track_file_delay_reversed, 16*60 + 20)
 
-    compare_tracking_to_ephemeris(
-        [tle_track_file, eph_track_file_delay_reversed,
-         ff_observation_track_w_li_c_file, ff_observation_track_w_to_c_file,
-         ff_observation_track_wo_c_file],
-        eph_base_file,
-        ["TLE based track", "Eph based track",
-                        "ff obs w li c", "ff obs w to c",
-                        "ff obs wo corr"]
-    )
+    # compare_tracking_to_ephemeris(
+    #     [tle_track_file, eph_track_file_delay_reversed,
+    #      ff_observation_track_w_li_c_file, ff_observation_track_w_to_c_file,
+    #      ff_observation_track_wo_c_file],
+    #     eph_base_file,
+    #     ["TLE based track", "Eph based track",
+    #                     "ff obs w li c", "ff obs w to c",
+    #                     "ff obs wo corr"]
+    # )

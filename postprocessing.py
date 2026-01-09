@@ -268,7 +268,7 @@ def scan_entire_fits_folder(fits_folder_path):
         plt.show()
 
 if __name__ == "__main__":
-    fits_folder = "..\\..\\Beispielüberflüge\\AJISAI_CPF_002"
+    fits_folder = "tracking\\2026Jan04__17_07__90\\RIGIDSPHERE-2-(LCS-4)"
 
     scan_entire_fits_folder(fits_folder)
 

@@ -39,7 +39,7 @@ class APP(tk.Tk):
         # ATTRIBUTES
         self.icon = "saturn_icon.ico"
         # Some window parameters
-        self.WIN_SIZE_POS = '780x580'
+        self.WIN_SIZE_POS = '850x550'
         self.PLOT_WIDTH = 5.5
         self.PLOT_HEIGHT = 2.5
         # Padding for all containers to uniformize the look
@@ -183,7 +183,7 @@ class APP(tk.Tk):
         scrollbar.pack(side='right', fill='y')
 
         columns = ('name', 'norad', 'timeToRise', 'visibleTime',
-                   'sunlit', 'height', 'elev')
+                   'sunlit', 'height', 'elev', 'age')
 
         self.sat_tree = ttk.Treeview(self._tree_frame, columns=columns,
                                     show='headings', yscrollcommand=scrollbar.set)
@@ -196,10 +196,11 @@ class APP(tk.Tk):
         self.sat_tree.heading('sunlit', text="Sunlit")
         self.sat_tree.heading('height', text="Height")
         self.sat_tree.heading('elev', text="Max. Elevation")
+        self.sat_tree.heading('age', text="TLE Age")
 
         # name column receives the most space and can stretch
-        for id_, width in zip(columns, [140, 80, 110, 110, 80, 80, 110]):
-            self.sat_tree.column(id_, width=width)
+        for id_, width, anchor in zip(columns, [140, 80, 100, 100, 80, 80, 110, 80], ["w"]+7*["center"]):
+            self.sat_tree.column(id_, width=width, anchor=anchor)
 
         self.sat_tree.pack(side='left', fill='both', expand=True,
                        padx=self.WIDGET_PADX, pady=self.WIDGET_PADY)
@@ -277,7 +278,7 @@ class APP(tk.Tk):
 
         self.sat_tree.delete(*self.sat_tree.get_children())  # clears table before refill
         for sat_data in self.sat_data_list:  # refill
-            self.sat_tree.insert('', tk.END, values=sat_data)
+            self.sat_tree.insert('', tk.END, values=sat_data, )
         return
 
 
