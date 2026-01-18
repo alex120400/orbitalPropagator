@@ -40,7 +40,7 @@ class APP(tk.Tk):
         # ATTRIBUTES
         self.icon = "saturn_icon.ico"
         # Some window parameters
-        self.WIN_SIZE_POS = '850x580'
+        self.WIN_SIZE_POS = '850x590'
         self.PLOT_WIDTH = 5.5
         self.PLOT_HEIGHT = 2.5
         # Padding for all containers to uniformize the look
@@ -174,11 +174,11 @@ class APP(tk.Tk):
 
         # satellite list
         self.satellite_summary_frame.columnconfigure(0, weight=1)
-        self.satellite_summary_frame.columnconfigure(1, weight=1)
+        # self.satellite_summary_frame.columnconfigure(1, weight=1)
         ttk.Button(self.satellite_summary_frame, text="Update Satellite List",
                    command=self._update_satellite_list).grid(row=0, column=0)
         ttk.Button(self.satellite_summary_frame, text="Export TLE data for selected satellites",
-                   command=self._export_satellites).grid(row=0, column=1)
+                   command=self._export_satellites).grid(row=2, column=0)
         self._tree_frame = ttk.Frame(self.satellite_summary_frame)
         scrollbar = ttk.Scrollbar(self._tree_frame)
         scrollbar.pack(side='right', fill='y')
@@ -206,7 +206,7 @@ class APP(tk.Tk):
         self.sat_tree.pack(side='left', fill='both', expand=True,
                        padx=self.WIDGET_PADX, pady=self.WIDGET_PADY)
 
-        self._tree_frame.grid(row=1, column=0, columnspan=2)
+        self._tree_frame.grid(row=1, column=0)
         for widget in self.satellite_summary_frame.winfo_children():
             widget.grid_configure(padx=self.WIDGET_PADX, pady=self.WIDGET_PADY, sticky="NESW")
 
@@ -215,15 +215,19 @@ class APP(tk.Tk):
         # freeflyer buttons setup
         self.freeFlyer_frame.columnconfigure(0, weight=1)
         self.freeFlyer_frame.columnconfigure(1, weight=1)
+        self.freeFlyer_frame.columnconfigure(2, weight=1)
+        self.freeFlyer_frame.columnconfigure(3, weight=1)
         ttk.Button(self.freeFlyer_frame, text="Generate Ephemerides based on SGP4", command=self._ff_sgp4_eph) \
-            .grid(row=0, column=0, padx=self.WIDGET_PADX, pady=self.WIDGET_PADY, sticky="NESW")
+            .grid(row=0, column=0, columnspan=2, padx=self.WIDGET_PADX, pady=self.WIDGET_PADY, sticky="NESW")
         ttk.Button(self.freeFlyer_frame, text="Generate Ephemerides based on OD", command=self._ff_od_hyb_eph) \
-            .grid(row=0, column=1, padx=self.WIDGET_PADX, pady=self.WIDGET_PADY, sticky="NESW")
-        ttk.Button(self.freeFlyer_frame, text="Generate Hybrid Ephemerides based on both, Ascending type:",
+            .grid(row=0, column=2, columnspan=2, padx=self.WIDGET_PADX, pady=self.WIDGET_PADY, sticky="NESW")
+        ttk.Button(self.freeFlyer_frame, text="Generate Hybrid Ephemerides based on TLE and OD",
                    command= lambda: self._ff_od_hyb_eph(hybrid_flag=True)) \
-            .grid(row=1, column=0, padx=self.WIDGET_PADX, pady=self.WIDGET_PADY, sticky="NESW")
+            .grid(row=1, column=0, columnspan=2, padx=self.WIDGET_PADX, pady=self.WIDGET_PADY, sticky="NESW")
+        ttk.Label(self.freeFlyer_frame, text="Ascending data will come from:", anchor="center") \
+            .grid(row=1, column=2, padx=self.WIDGET_PADX, pady=self.WIDGET_PADY, sticky="NESW")
         ttk.Combobox(self.freeFlyer_frame, textvariable=self.hybrid_mode_sel, values=("TLE", "OD"), state="readonly") \
-            .grid(row=1, column=1, padx=self.WIDGET_PADX, pady=self.WIDGET_PADY, sticky="NESW")
+            .grid(row=1, column=3, padx=self.WIDGET_PADX, pady=self.WIDGET_PADY, sticky="NESW")
 
         self.freeFlyer_frame.grid(row=2, column=0, columnspan=2)
 
@@ -352,8 +356,6 @@ class APP(tk.Tk):
         poll_queue()
 
 
-
-
     def _handle_missionplan_completion(self, start_time, durationMin):
         if self.mission_runner.missionplan_success_flag:
             # now there exist files called "ASATrackingData_xy.eph" and "ASATrackingData_xy.tle"
@@ -373,7 +375,6 @@ class APP(tk.Tk):
             mbox.showerror("Error", message=
                             f"There was an error while executing the missionplan:\n{self.mission_runner.error_msg}")
         shutil.rmtree(os.path.join(MISSION_PLAN_PATH, "tmp"), ignore_errors=True)
-
 
 
     def _create_tracking_tab(self):
@@ -424,6 +425,7 @@ class APP(tk.Tk):
         for widget in self.tracking_tab.winfo_children():
             widget.grid_configure(padx=self.WIDGET_PADX, pady=self.WIDGET_PADY, sticky='NESW')
         self.master_tab_holder.add(self.tracking_tab, text='Tracking', sticky='NSEW')
+
 
     def _select_eph_tle_file(self):
         self.eph_tle_preview.configure(state="normal")
@@ -564,6 +566,7 @@ class APP(tk.Tk):
                     try:
                         self.camera.takeSingleImage(self.telescope, exposureTimeMs=500,
                                                     filePath=fits_path, img_number=image_idx)
+                        sleep(0.5) # reduce to roughly one frame per second
                     except Exception as e:
                         print(f"There was an error while taking an imgage:\n{str(e)}")
                     finally:

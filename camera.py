@@ -260,7 +260,7 @@ class CameraWrapper():
             hdr = fits.Header()
             date_obs = currentDate.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
             hdr['DATE-OBS'] = (date_obs, "Timestamp of observation in UTC")
-            hdr['DATEDATA'] = (timestamp_utc, "Timestamp of position data request in UTC")
+            hdr['DATE-DATA'] = (timestamp_utc, "Timestamp of position data request in UTC")
             # hdr['REFRACT'] = (refractionAutoslew, "ASA refraction value in arcsec")
             # hdr['CORRECT'] = (pointing_correction, "AltAz pointing correction of current model in radians")
             hdr['EXPTIME'] = (exposureTimeMs, "Exposure time in milliseconds")
@@ -316,9 +316,16 @@ class CameraWrapper():
             # hdr['BSCALE'] = (1, "Pixel scaling factor")
             # hdr['BZERO'] = (32768, "Pixel offset factor")
 
-            img_number_padded = str(img_number).zfill(3)
-            fileName = img_number_padded + "-Alt" + str(round(altitude)) + "-Az" + str(round(azimuth))
+            # get first 8 decimals of the day's fraction
+            fractional_day = (currentDate.hour / 24
+                              + currentDate.minute / (60 * 24)
+                              + currentDate.second / (3600 * 24)
+                              + currentDate.microsecond / (1e6 * 3600 * 24))
 
+            frac_day_8decimals = int(fractional_day * 1e8)
+
+            img_number_padded = str(img_number).zfill(3)
+            fileName = img_number_padded + f"-FracOfDay{frac_day_8decimals}" # "-Alt" + str(round(altitude)) + "-Az" + str(round(azimuth))
             img_file = os.path.join(filePath, fileName+".fits")
             hdu.writeto(img_file, overwrite=True)
 
