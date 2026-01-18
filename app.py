@@ -12,6 +12,7 @@ try:
     import numpy as np
     from time import sleep
     import astropy.time as as_time
+    import queue
 
     # import scipy.fft as fft
     # from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
@@ -39,7 +40,7 @@ class APP(tk.Tk):
         # ATTRIBUTES
         self.icon = "saturn_icon.ico"
         # Some window parameters
-        self.WIN_SIZE_POS = '850x550'
+        self.WIN_SIZE_POS = '850x580'
         self.PLOT_WIDTH = 5.5
         self.PLOT_HEIGHT = 2.5
         # Padding for all containers to uniformize the look
@@ -73,7 +74,7 @@ class APP(tk.Tk):
         self.mission_runner = ff.MissionPlanRunner()
         self.eph_tle_preview = None # will be st.ScrolledText
         self.eph_tle_file = None # will be string of filepath
-        self.tle_age_info = tk.StringVar(value=f"TLE sources are {pre.get_TLE_data_aga(ogs_flag=False)} days old")
+        self.tle_age_info = tk.StringVar(value=f"TLE sources are {pre.get_TLE_data_age(ogs_flag=False)} days old")
         self.tel_conn_status_label = None # will be tk.Label (tk instead of ttk because coloring is easier)
         self.telescope = tracking.TelescopeWrapper()
         self.tracking_status_label = None # will be tk.Label (tk instead of ttk because coloring is easier)
@@ -82,7 +83,7 @@ class APP(tk.Tk):
         self.current_Azi = tk.StringVar(value="Not connected")
         self.current_Elev = tk.StringVar(value="Not connected")
         self.tracking_tle_only_flag = False # flag indicates whether to use just TLE as data or a full eph for tracking
-
+        self.hybrid_mode_sel = tk.StringVar(value="TLE")
 
         # threads
         self.tracking_thread = None  # will be a new thread each time there is a new track started
@@ -211,13 +212,19 @@ class APP(tk.Tk):
 
         self.satellite_summary_frame.grid(row=1, column=0, columnspan=2)
 
-        # satellite list setup
+        # freeflyer buttons setup
         self.freeFlyer_frame.columnconfigure(0, weight=1)
         self.freeFlyer_frame.columnconfigure(1, weight=1)
-        ttk.Button(self.freeFlyer_frame, text="Generate Ephemerides based on SGP4",
-                   command=self._ff_sgp4_eph).grid(row=0, column=0, padx=self.WIDGET_PADX, pady=self.WIDGET_PADY, sticky="NESW")
-        ttk.Button(self.freeFlyer_frame, text="Generate Ephemerides based on Orbit Determination",
-                   command=self._ff_od_eph).grid(row=0, column=1, padx=self.WIDGET_PADX, pady=self.WIDGET_PADY, sticky="NESW")
+        ttk.Button(self.freeFlyer_frame, text="Generate Ephemerides based on SGP4", command=self._ff_sgp4_eph) \
+            .grid(row=0, column=0, padx=self.WIDGET_PADX, pady=self.WIDGET_PADY, sticky="NESW")
+        ttk.Button(self.freeFlyer_frame, text="Generate Ephemerides based on OD", command=self._ff_od_hyb_eph) \
+            .grid(row=0, column=1, padx=self.WIDGET_PADX, pady=self.WIDGET_PADY, sticky="NESW")
+        ttk.Button(self.freeFlyer_frame, text="Generate Hybrid Ephemerides based on both, Ascending type:",
+                   command= lambda: self._ff_od_hyb_eph(hybrid_flag=True)) \
+            .grid(row=1, column=0, padx=self.WIDGET_PADX, pady=self.WIDGET_PADY, sticky="NESW")
+        ttk.Combobox(self.freeFlyer_frame, textvariable=self.hybrid_mode_sel, values=("TLE", "OD"), state="readonly") \
+            .grid(row=1, column=1, padx=self.WIDGET_PADX, pady=self.WIDGET_PADY, sticky="NESW")
+
         self.freeFlyer_frame.grid(row=2, column=0, columnspan=2)
 
         # tab layout
@@ -228,9 +235,9 @@ class APP(tk.Tk):
     def _toggle_tle_source(self, tk_bool_var:tk.BooleanVar):
         tk_bool_var.set(False) # needed at the beginning for logic to work
         if self.use_ogs_TLEs.get() is True:
-            self.tle_age_info.set(f"TLE sources are {pre.get_TLE_data_aga(ogs_flag=True)} days old")
+            self.tle_age_info.set(f"TLE sources are {pre.get_TLE_data_age(ogs_flag=True)} days old")
         elif self.use_spaceTrack_TLEs.get() is True:
-            self.tle_age_info.set(f"TLE sources are {pre.get_TLE_data_aga(ogs_flag=False)} days old")
+            self.tle_age_info.set(f"TLE sources are {pre.get_TLE_data_age(ogs_flag=False)} days old")
         else:
             self.tle_age_info.set("Select TLE Source")
 
@@ -239,7 +246,7 @@ class APP(tk.Tk):
             if sky_load.days_old(OGS_TLE_FILE) > 0.01:
                 if pre.update_ogs_TLE_data() is True: # allow updates every 15 min
                     mbox.showinfo(title="Info", message="Updated CelesTrack (OGS) TLE sources!")
-                    self.tle_age_info.set(f"TLE sources are {pre.get_TLE_data_aga(ogs_flag=True)} days old")
+                    self.tle_age_info.set(f"TLE sources are {pre.get_TLE_data_age(ogs_flag=True)} days old")
                     return
                 else:
                     mbox.showerror(title="Error", message="Could not update CelesTack (OGS) TLE sources, check log!")
@@ -250,7 +257,7 @@ class APP(tk.Tk):
             if sky_load.days_old(pre.LEO_TLE_FILE) > 0.01: # allow updates every 15 min
                 if pre.update_LEO_TLE_data() is True:
                     mbox.showinfo(title="Info", message="Updated SpaceTrack (LEO) TLE sources!")
-                    self.tle_age_info.set(f"TLE sources are {pre.get_TLE_data_aga(ogs_flag=False)} days old")
+                    self.tle_age_info.set(f"TLE sources are {pre.get_TLE_data_age(ogs_flag=False)} days old")
                     return
                 else:
                     mbox.showerror(title="Error", message="Could not update SpaceTrack (LEO) TLE sources, check log!")
@@ -301,8 +308,53 @@ class APP(tk.Tk):
                                  self.minute.get())
         durationMin = self.dr_hour.get() * 60 + self.dr_minute.get()
         startTimeString = start_time.utc_strftime("%b %d %Y %H:%M:%S")
-        os.mkdir(os.path.join(MISSION_PLAN_PATH, "tmp")) # eph files will be put there
+        if not os.path.isdir(os.path.join(MISSION_PLAN_PATH, "tmp")):
+            os.mkdir(os.path.join(MISSION_PLAN_PATH, "tmp"))  # eph files will be put there
         self.mission_runner.run_SGP4_EPH_plan(durationMin, startTimeString)
+        self._handle_missionplan_completion(start_time, durationMin)
+
+    def _ff_od_hyb_eph(self, hybrid_flag = False):
+        start_time = self.ts.utc(self.year.get(),
+                                 self.month.get(),
+                                 self.day.get(),
+                                 self.hour.get(),
+                                 self.minute.get())
+        durationMin = self.dr_hour.get() * 60 + self.dr_minute.get()
+        startTimeString = start_time.utc_strftime("%b %d %Y %H:%M:%S")
+        if not os.path.isdir(os.path.join(MISSION_PLAN_PATH, "tmp")):
+            os.mkdir(os.path.join(MISSION_PLAN_PATH, "tmp")) # eph files will be put there
+
+        od_update_box = tk.Toplevel(self)
+        od_update_box.title("FreeFlyer Missionplan Execution")
+        od_update_box.geometry("400x120")
+        od_update_box.resizable(False, False)
+
+        self.OD_msg_label = ttk.Label(od_update_box, text="Starting...", anchor="center")
+        self.OD_msg_label.pack(expand=True, fill="both", padx=self.WIDGET_PADX, pady=self.WIDGET_PADY)
+
+        self.mission_runner.HYB_ascending_sc_type = self.hybrid_mode_sel.get()
+        self._start_a_thread(self.mission_runner.run_OD_HYB_EPH_plan, (durationMin, startTimeString, hybrid_flag))
+
+        def poll_queue():
+            try:
+                msg = self.mission_runner.OD_status_queue.get_nowait()
+                if msg == "Finished":
+                    self.OD_msg_label.config(text=msg)
+                    od_update_box.destroy()
+                    self._handle_missionplan_completion(start_time, durationMin)
+                    return
+                else:
+                    self.OD_msg_label.config(text=msg)
+            except queue.Empty:
+                pass
+            self.after(200, poll_queue)
+
+        poll_queue()
+
+
+
+
+    def _handle_missionplan_completion(self, start_time, durationMin):
         if self.mission_runner.missionplan_success_flag:
             # now there exist files called "ASATrackingData_xy.eph" and "ASATrackingData_xy.tle"
             eph_dir = os.path.join(TRACKING_PATH, start_time.utc_strftime(f"%Y%b%d__%H_%M__{durationMin}"))
@@ -310,42 +362,18 @@ class APP(tk.Tk):
             if not os.path.isdir(eph_dir):
                 os.mkdir(eph_dir) # create if non-existing
             for file in os.listdir(os.path.join(MISSION_PLAN_PATH, "tmp")):
-                shutil.move(os.path.join(MISSION_PLAN_PATH, "tmp", file), str(eph_dir))
+                try:
+                    shutil.move(os.path.join(MISSION_PLAN_PATH, "tmp", file), str(eph_dir))
+                except shutil.Error as e:
+                    mbox.showwarning("Warning", f"While moving files there was an error:\n{str(e)}")
+                    continue
             # moved all generated files
             mbox.showinfo("Info", "Generated Ephemerides and TLEs!")
         else:
             mbox.showerror("Error", message=
                             f"There was an error while executing the missionplan:\n{self.mission_runner.error_msg}")
-        shutil.rmtree(os.path.join(MISSION_PLAN_PATH, "tmp"), ignore_errors=False)
+        shutil.rmtree(os.path.join(MISSION_PLAN_PATH, "tmp"), ignore_errors=True)
 
-
-    @staticmethod
-    def convert_GO_to_TR(ground_obs_txt_file, tracking_rep_csv_file):
-        # Load azi, alt and epoch data
-        data = np.loadtxt(ground_obs_txt_file, usecols=(2, 3, 4))
-        az, alt, mjd_tai_ff = data.T
-        # az and alt are in rad -> convert to degree
-        az = np.rad2deg(az)
-        alt = np.rad2deg(alt)
-        # epoch is TAI in Modified Julian format, freeflyer uses 1941 as reference instead of 1858 (asa)
-        # -> add 29999.5 to compensate years and subtract leap seconds
-        mjd_tai_asa = mjd_tai_ff + 29999.5
-        mjd_tai_asa = as_time.Time(mjd_tai_asa, format='mjd', scale='tai')
-        mjd_utc_asa = mjd_tai_asa.utc.mjd
-
-        converted_data = np.column_stack((mjd_utc_asa, az, alt))
-
-        np.savetxt(
-            tracking_rep_csv_file,
-            converted_data,
-            delimiter=";",
-            header="Epoch (mjd);Azimuth (deg),Elevation (deg)",
-            comments="",
-        )
-
-
-    def _ff_od_eph(self):
-        pass
 
 
     def _create_tracking_tab(self):

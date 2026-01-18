@@ -162,22 +162,24 @@ if __name__ == "__main__":
     delayed_eph_file = "ASATrackingData_STARLINK-1364_delayed.eph"
     delayed_eph_file_wo_corr = "ASATrackingData_STARLINK-1364_wo_corr_delayed.eph"
 
-    # add delay of 10 minutes to epochs in eph_base_file, run only once
-    delay_ephemeris(eph_base_file_wo_corr, delayed_eph_file_wo_corr, 3*60)
+    # add delay of x minutes to epochs in eph_base_file, run only once
+    # delay_ephemeris(eph_base_file_wo_corr, delayed_eph_file_wo_corr, 3*60)
 
-    # tle_track_file = "trackingReport_STARLINK-1364.csv"
-    # eph_track_file_delayed = "trackingReport_STARLINK-1364_delayed.csv"
-    # eph_track_file_delay_reversed = "trackingReport_STARLINK-1364_delay_reversed.csv"
-    # ff_observation_track_wo_corr_file = "FFGroundObservations_STARLINK-1364_wo_corr_converted.csv"
-    #
-    # # remove delay of 10 minutes from epochs in measured csv track file, run only once
-    # # reverse_delay_csv(eph_track_file_delayed, eph_track_file_delay_reversed, 10)
-    #
-    # compare_tracking_to_ephemeris(
-    #     [tle_track_file, eph_track_file_delay_reversed, ff_observation_track_wo_corr_file],
-    #     eph_base_file,
-    #     ["TLE based track", "Eph based track (w lt c)", "FF obs wo corrs"]
-    # )
+    tle_track_file = "trackingReport_STARLINK-1364.csv"
+    eph_track_file_delayed = "trackingReport_STARLINK-1364_delayed.csv"
+    eph_track_file_delay_reversed = "trackingReport_STARLINK-1364_delay_reversed.csv"
+    eph_track_file_wo_corr_delayed = "trackingReport_STARLINK-1364_wo_corr_delayed.csv"
+    eph_track_file_wo_corr_delay_reversed = "trackingReport_STARLINK-1364_wo_corr_delay_reversed.csv"
+    ff_observation_track_wo_corr_file = "FFGroundObservations_STARLINK-1364_wo_corr_converted.csv"
+
+    # remove delay of x minutes from epochs in measured csv track file, run only once
+    # reverse_delay_csv(eph_track_file_wo_corr_delayed, eph_track_file_wo_corr_delay_reversed, 3*60)
+
+    compare_tracking_to_ephemeris(
+        [tle_track_file, eph_track_file_delay_reversed, eph_track_file_wo_corr_delay_reversed, ff_observation_track_wo_corr_file],
+        eph_base_file,
+        ["TLE based track", "Eph based track (w lt c)", "Eph based track (wo corr)", "FF obs wo corrs"]
+    )
     #
     # # ---------- Compare tracking data ----------
     # eph_tracking_data = np.loadtxt(eph_track_file_delay_reversed, delimiter=";", skiprows=1)

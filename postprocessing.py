@@ -17,6 +17,8 @@ def show_fits_image_and_header(fits_file, smart_grey_scale=True):
     for key in header.keys():
         print(f"{key}:\t{header[key]}")
 
+    image_np = image_np[:, :-8]
+
     if smart_grey_scale:
         vmin, vmax = np.percentile(image_np, (1, 99))
         plt.imshow(image_np, cmap="gray" , vmin=vmin, vmax=vmax)
@@ -27,9 +29,11 @@ def show_fits_image_and_header(fits_file, smart_grey_scale=True):
     plt.show()
 
 
-def detect_satellite(fits_path, visualize_flag=False, debug_flag=False):
+def detect_satellite(fits_path, visualize_flag=False, debug_flag=False, hw_bin_err_flag=True):
     # ---- Load FITS image ----
     image_np = fits.getdata(fits_path).astype(np.float32)
+    if hw_bin_err_flag:
+        image_np = image_np[:, :-8]
 
     # Normalize to 8-bit for OpenCV
     image_np -= np.min(image_np)
@@ -270,7 +274,8 @@ def scan_entire_fits_folder(fits_folder_path):
 if __name__ == "__main__":
     fits_folder = "tracking\\2026Jan04__17_07__90\\RIGIDSPHERE-2-(LCS-4)"
 
-    scan_entire_fits_folder(fits_folder)
+    show_fits_image_and_header(fits_folder+"\\001-Alt26-Az143.fits")
+    # scan_entire_fits_folder(fits_folder)
 
 
 

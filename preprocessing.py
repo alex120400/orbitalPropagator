@@ -90,7 +90,7 @@ def update_ogs_TLE_data() -> bool:
         print(f"Error occurred while updating OGS TLEs:\n{str(e)}")
         return False
 
-def get_TLE_data_aga(ogs_flag:bool=False) -> int:
+def get_TLE_data_age(ogs_flag:bool=False) -> int:
     """ returns the age of TLE data in rounded days
 
     :param ogs_flag: indicates whether to check ogs or leo source
