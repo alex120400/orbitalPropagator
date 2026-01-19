@@ -1,0 +1,3 @@
+Ascending Sc was: OD
+Switched at Epoch:
+61059.703524306

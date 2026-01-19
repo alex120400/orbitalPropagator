@@ -130,6 +130,7 @@ class APP(tk.Tk):
     def _create_preprocessing_tab(self):
         self.preprocessing_tab.columnconfigure(0, weight=1)
         self.preprocessing_tab.columnconfigure(1, weight=1)
+        self.preprocessing_tab.rowconfigure(1, weight=1)
 
         # four distinct zones: time conf, tle sources, satellite summary, freeflyer execution
         self.watch_window_frame = ttk.LabelFrame(self.preprocessing_tab, text="Watch Window Configuration")
@@ -174,6 +175,7 @@ class APP(tk.Tk):
 
         # satellite list
         self.satellite_summary_frame.columnconfigure(0, weight=1)
+        self.satellite_summary_frame.rowconfigure(1, weight=1)
         # self.satellite_summary_frame.columnconfigure(1, weight=1)
         ttk.Button(self.satellite_summary_frame, text="Update Satellite List",
                    command=self._update_satellite_list).grid(row=0, column=0)
@@ -217,6 +219,7 @@ class APP(tk.Tk):
         self.freeFlyer_frame.columnconfigure(1, weight=1)
         self.freeFlyer_frame.columnconfigure(2, weight=1)
         self.freeFlyer_frame.columnconfigure(3, weight=1)
+
         ttk.Button(self.freeFlyer_frame, text="Generate Ephemerides based on SGP4", command=self._ff_sgp4_eph) \
             .grid(row=0, column=0, columnspan=2, padx=self.WIDGET_PADX, pady=self.WIDGET_PADY, sticky="NESW")
         ttk.Button(self.freeFlyer_frame, text="Generate Ephemerides based on OD", command=self._ff_od_hyb_eph) \
