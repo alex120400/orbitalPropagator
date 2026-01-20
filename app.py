@@ -250,34 +250,35 @@ class APP(tk.Tk):
             self.tle_age_info.set("Select TLE Source")
 
     def _update_tle_sources(self):
-        pass # only during experimentation phase, don't want updates right now
-        # if self.use_ogs_TLEs.get() is True:
-        #     if sky_load.days_old(OGS_TLE_FILE) > 0.01:
-        #         if pre.update_ogs_TLE_data() is True: # allow updates every 15 min
-        #             mbox.showinfo(title="Info", message="Updated CelesTrack (OGS) TLE sources!")
-        #             self.tle_age_info.set(f"TLE sources are {pre.get_TLE_data_age(ogs_flag=True)} days old")
-        #             return
-        #         else:
-        #             mbox.showerror(title="Error", message="Could not update CelesTack (OGS) TLE sources, check log!")
-        #             return
-        #     else:
-        #         mbox.showwarning(title="Warning", message="Updates only possible every 15 minutes!")
-        # elif self.use_spaceTrack_TLEs.get() is True:
-        #     if sky_load.days_old(pre.LEO_TLE_FILE) > 0.01: # allow updates every 15 min
-        #         if pre.update_LEO_TLE_data() is True:
-        #             mbox.showinfo(title="Info", message="Updated SpaceTrack (LEO) TLE sources!")
-        #             self.tle_age_info.set(f"TLE sources are {pre.get_TLE_data_age(ogs_flag=False)} days old")
-        #             return
-        #         else:
-        #             mbox.showerror(title="Error", message="Could not update SpaceTrack (LEO) TLE sources, check log!")
-        #             return
-        #     else:
-        #         mbox.showwarning(title="Warning", message="Updates only possible every 15 minutes!")
-        # else:
-        #     mbox.showerror(title="Error", message="Select TLE Source first!")
-        #     return
+        # pass # only during experimentation phase, don't want updates right now
+        if self.use_ogs_TLEs.get() is True:
+            if sky_load.days_old(OGS_TLE_FILE) > 0.01:
+                if pre.update_ogs_TLE_data() is True: # allow updates every 15 min
+                    mbox.showinfo(title="Info", message="Updated CelesTrack (OGS) TLE sources!")
+                    self.tle_age_info.set(f"TLE sources are {pre.get_TLE_data_age(ogs_flag=True)} days old")
+                    return
+                else:
+                    mbox.showerror(title="Error", message="Could not update CelesTack (OGS) TLE sources, check log!")
+                    return
+            else:
+                mbox.showwarning(title="Warning", message="Updates only possible every 15 minutes!")
+        elif self.use_spaceTrack_TLEs.get() is True:
+            if sky_load.days_old(pre.LEO_TLE_FILE) > 0.01: # allow updates every 15 min
+                if pre.update_LEO_TLE_data() is True:
+                    mbox.showinfo(title="Info", message="Updated SpaceTrack (LEO) TLE sources!")
+                    self.tle_age_info.set(f"TLE sources are {pre.get_TLE_data_age(ogs_flag=False)} days old")
+                    return
+                else:
+                    mbox.showerror(title="Error", message="Could not update SpaceTrack (LEO) TLE sources, check log!")
+                    return
+            else:
+                mbox.showwarning(title="Warning", message="Updates only possible every 15 minutes!")
+        else:
+            mbox.showerror(title="Error", message="Select TLE Source first!")
+            return
 
     def _update_satellite_list(self):
+        print("should be doing something")
         start_time = self.ts.utc(self.year.get(),
                                  self.month.get(),
                                  self.day.get(),
