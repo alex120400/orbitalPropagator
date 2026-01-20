@@ -44,7 +44,7 @@ def detect_satellite(fits_path, visualize_flag=False, debug_flag=False, hw_bin_e
     height, width = image_np.shape
     centerX = width / 2
     centerY = height / 2
-    print(f"im-center-X: {centerX}, im-center-Y: {centerY}")
+    #print(f"im-center-X: {centerX}, im-center-Y: {centerY}")
 
     # ---- Preprocessing ----
     smooth_frame = cv2.GaussianBlur(image_np, (5, 5), 0)
@@ -130,9 +130,9 @@ def detect_satellite(fits_path, visualize_flag=False, debug_flag=False, hw_bin_e
     best_sat_idx = np.argmax(satellite_scores)
 
     best_centroid = satellite_centroids[best_sat_idx]
-    print(f"centroid-X: {best_centroid[0]}, centroid-y: {best_centroid[1]}")
+    #print(f"centroid-X: {best_centroid[0]}, centroid-y: {best_centroid[1]}")
     best_candidate = satellite_candidates[best_sat_idx]
-    print(f"enclosure-center-X: {best_candidate[0][0]}, enclosure-center-Y: {best_candidate[0][1]}")
+    #print(f"enclosure-center-X: {best_candidate[0][0]}, enclosure-center-Y: {best_candidate[0][1]}")
     best_distance = satellite_distances[best_sat_idx]
 
 
@@ -294,11 +294,11 @@ def get_abs_arcsec_offset_from_single_image(fits_image_path, hw_bin_err_flag=Tru
 
     d_abs_deg = np.sqrt(d_az**2+d_alt**2)
     d_abs_arcsec = d_abs_deg*3600
-    print(f"offset [arcsec]: {d_abs_arcsec}")
+    # print(f"offset [arcsec]: {d_abs_arcsec}")
     return d_abs_arcsec
 
 
-def get_abs_arcsec_offset_from_folder_for_HybridTracks(fits_folder_path, split_frac_of_day:int, hw_bin_err_flag=True):
+def get_abs_arcsec_offset_from_folder_for_HybridTracks(fits_folder_path, split_frac_of_day, ASC_TYPE, hw_bin_err_flag=True):
     safety_span = int((3 / (3600 * 24)) * 1e8) # 3 seconds in both directions of the split epoch will be ignored
     TLE_offsets = list()
     OD_offsets = list()
@@ -320,15 +320,21 @@ def get_abs_arcsec_offset_from_folder_for_HybridTracks(fits_folder_path, split_f
                     return
                 if frac_of_the_day_int < (split_frac_of_day - safety_span):
                     # ascending, expected to be TLE
-                    print(f"TLE exported: {cont_numb}")
-                    TLE_offsets.append(arcsec_offset)
+                    if ASC_TYPE == "TLE":
+                        # print(f"TLE exported: {cont_numb}")
+                        TLE_offsets.append(arcsec_offset)
+                    else:
+                        OD_offsets.append(arcsec_offset)
                 elif frac_of_the_day_int > (split_frac_of_day + safety_span):
                     # desceding, expected to be OD
-                    OD_offsets.append(arcsec_offset)
-                    print(f"OD exported: {cont_numb}")
+                    if ASC_TYPE == "TLE":
+                        OD_offsets.append(arcsec_offset)
+                        #print(f"OD exported: {cont_numb}")
+                    else:
+                        TLE_offsets.append(arcsec_offset)
                 else:
                     # in safety region which is excluded
-                    print(f"Skipped: {cont_numb}")
+                    #print(f"Skipped: {cont_numb}")
                     continue
     return np.array(TLE_offsets), np.array(OD_offsets)
 
@@ -343,41 +349,47 @@ if __name__ == "__main__":
     # get_abs_arcsec_offset_from_single_image(fits_folder+"\\002-Alt26-Az143.fits")
 
 
+
     #hybrid_fits_folder = "tracking\\2026Jan04__17_17__90\\SDA_1675_FracOfDay"
-    #tle_arcsec_offsets, od_arcsec_offsets = get_abs_arcsec_offset_from_folder_for_HybridTracks(hybrid_fits_folder, 72569040)
+
+    # hybrid_fits_folder = r"tracking\\2026Jan19__15_55__130\\12\\HYB_COSMOS-2170" # 72050347.2, OD asc
+    # hybrid_fits_folder = r"tracking\\2026Jan19__15_55__130\\13\\HYB_ONEWEB-0715" # 72598958.3, TLE asc
+    # hybrid_fits_folder = r"tracking\\2026Jan19__15_55__130\\14\\HYB_ONEWEB-0098" # 73185763.9, OD asc
+    # hybrid_fits_folder = r"tracking\\2026Jan19__15_55__130\\15\\HYB_DELTA-1-DEB" # 74008680.6, OD asc
+    # tle_arcsec_offsets, od_arcsec_offsets = get_abs_arcsec_offset_from_folder_for_HybridTracks(hybrid_fits_folder, 74008680.6, "OD")
 
     # np.savetxt(
-    #     "tracking\\2026Jan04__17_17__90\\TLE_offsets.txt",
+    #     "tracking\\2026Jan19__15_55__130\\15\\TLE_offsets.txt",
     #     tle_arcsec_offsets,
     #     header="abs offset [arcsec]",
     #     comments="",
     # )
-
+    #
     # np.savetxt(
-    #     "tracking\\2026Jan04__17_17__90\\OD_offsets.txt",
+    #     "tracking\\2026Jan19__15_55__130\\15\\OD_offsets.txt",
     #     od_arcsec_offsets,
     #     header="abs offset [arcsec]",
     #     comments="",
     # )
 
-    tle_arcsec_offsets = np.loadtxt("tracking\\2026Jan04__17_17__90\\TLE_offsets.txt", skiprows=1)
-    od_arcsec_offsets = np.loadtxt("tracking\\2026Jan04__17_17__90\\OD_offsets.txt", skiprows=1)
-
-    fig = plt.figure(figsize=(10, 6))
-
-
-    # plot box plot
-    plt.boxplot((od_arcsec_offsets, tle_arcsec_offsets))
-    plt.title('Box plot')
-
-    # adding horizontal grid lines
-    plt.grid("x")
-    plt.xticks([1, 2],
-                  labels=['OD', "TLE"])
-    plt.xlabel('Measuring Sets')
-    plt.ylabel('Offsets [arcsec]')
-
-    plt.show()
+    # tle_arcsec_offsets = np.loadtxt("tracking\\2026Jan04__17_17__90\\TLE_offsets.txt", skiprows=1)
+    # od_arcsec_offsets = np.loadtxt("tracking\\2026Jan04__17_17__90\\OD_offsets.txt", skiprows=1)
+    #
+    # fig = plt.figure(figsize=(10, 6))
+    #
+    #
+    # # plot box plot
+    # plt.boxplot((od_arcsec_offsets, tle_arcsec_offsets))
+    # plt.title('Box plot')
+    #
+    # # adding horizontal grid lines
+    # plt.grid("x")
+    # plt.xticks([1, 2],
+    #               labels=['OD', "TLE"])
+    # plt.xlabel('Measuring Sets')
+    # plt.ylabel('Offsets [arcsec]')
+    #
+    # plt.show()
 
 
 
