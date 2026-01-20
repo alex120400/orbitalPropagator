@@ -571,7 +571,10 @@ class APP(tk.Tk):
             track_path, eph_tle_file = os.path.split(self.eph_tle_file)
             eph_name = eph_tle_file[16:-4] # get name of file without 'ASATrackingData_' and '.eph'/'.tle'
             fits_path = os.path.join(track_path, eph_name)
-            os.mkdir(fits_path)
+            try:
+                os.mkdir(fits_path)
+            except Exception:
+                pass
 
             image_idx = 1
             while self.telescope.tracking_flag: # stay in loop while tracking
