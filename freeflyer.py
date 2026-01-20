@@ -28,10 +28,13 @@ class MissionPlanRunner:
         self._gps_available_flag = False
         self._gps_eph_file = None
 
+
         # OD and hybrid plan related variables
+        self._max_iterations = 10 # after 10 iterations abort calculating current satellite in OD/HYB plan
         self.obs_length_days = 3 # days
         self.OD_status_queue = queue.Queue()
         self.HYB_ascending_sc_type = "TLE"
+        self.OD_abort_flag = False
 
 
         # Get path to runtime library
@@ -182,8 +185,11 @@ class MissionPlanRunner:
                             batch_vel_error = 1
                             # same while exists loop in mission plan
                             self.OD_status_queue.put(msg_base+"\nStarting OD iteration 1")
-                            while batch_pos_error > 0.00001 and batch_vel_error > 0.00001:
-                                engine.executeUntilApiLabel("Iteration-Finished")
+                            it = 0
+                            while batch_pos_error > 0.00001 and batch_vel_error > 0.00001 and it < self._max_iterations:
+                                engine.executeUntilApiLabel("Iteration-Finished") # this takes the longest
+                                if self.OD_abort_flag:
+                                    break # first step to get to next satellite
                                 finished_it_number = engine.getExpressionVariable("BatchIterationCount")
                                 batch_pos_error = engine.getExpressionVariable("batch_pos_change")
                                 batch_vel_error = engine.getExpressionVariable("batch_vel_change")
@@ -191,6 +197,11 @@ class MissionPlanRunner:
                                 msg += f"\nLast position update: {batch_pos_error:.5f} km"
                                 msg += f"\nLast velocity update: {batch_vel_error:.5f} km/s"
                                 self.OD_status_queue.put(msg)
+                            if self.OD_abort_flag:
+                                engine.cleanupMissionPlan()
+                                self.OD_abort_flag = False  # important reset
+                                self.OD_status_queue.put(f"\nSuccessfully aborted Analysis of {sat_name}.")
+                                continue # final step to get to next satellite
                             engine.executeUntilApiLabel("All-Iterations-Finished")
                             msg = msg_base + "\nFinished iterating, now calculating ephemeris"
                             self.OD_status_queue.put(msg)

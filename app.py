@@ -84,6 +84,7 @@ class APP(tk.Tk):
         self.current_Elev = tk.StringVar(value="Not connected")
         self.tracking_tle_only_flag = False # flag indicates whether to use just TLE as data or a full eph for tracking
         self.hybrid_mode_sel = tk.StringVar(value="TLE")
+        self.OD_abort = tk.BooleanVar(value=False)
 
         # threads
         self.tracking_thread = None  # will be a new thread each time there is a new track started
@@ -249,31 +250,32 @@ class APP(tk.Tk):
             self.tle_age_info.set("Select TLE Source")
 
     def _update_tle_sources(self):
-        if self.use_ogs_TLEs.get() is True:
-            if sky_load.days_old(OGS_TLE_FILE) > 0.01:
-                if pre.update_ogs_TLE_data() is True: # allow updates every 15 min
-                    mbox.showinfo(title="Info", message="Updated CelesTrack (OGS) TLE sources!")
-                    self.tle_age_info.set(f"TLE sources are {pre.get_TLE_data_age(ogs_flag=True)} days old")
-                    return
-                else:
-                    mbox.showerror(title="Error", message="Could not update CelesTack (OGS) TLE sources, check log!")
-                    return
-            else:
-                mbox.showwarning(title="Warning", message="Updates only possible every 15 minutes!")
-        elif self.use_spaceTrack_TLEs.get() is True:
-            if sky_load.days_old(pre.LEO_TLE_FILE) > 0.01: # allow updates every 15 min
-                if pre.update_LEO_TLE_data() is True:
-                    mbox.showinfo(title="Info", message="Updated SpaceTrack (LEO) TLE sources!")
-                    self.tle_age_info.set(f"TLE sources are {pre.get_TLE_data_age(ogs_flag=False)} days old")
-                    return
-                else:
-                    mbox.showerror(title="Error", message="Could not update SpaceTrack (LEO) TLE sources, check log!")
-                    return
-            else:
-                mbox.showwarning(title="Warning", message="Updates only possible every 15 minutes!")
-        else:
-            mbox.showerror(title="Error", message="Select TLE Source first!")
-            return
+        pass # only during experimentation phase, don't want updates right now
+        # if self.use_ogs_TLEs.get() is True:
+        #     if sky_load.days_old(OGS_TLE_FILE) > 0.01:
+        #         if pre.update_ogs_TLE_data() is True: # allow updates every 15 min
+        #             mbox.showinfo(title="Info", message="Updated CelesTrack (OGS) TLE sources!")
+        #             self.tle_age_info.set(f"TLE sources are {pre.get_TLE_data_age(ogs_flag=True)} days old")
+        #             return
+        #         else:
+        #             mbox.showerror(title="Error", message="Could not update CelesTack (OGS) TLE sources, check log!")
+        #             return
+        #     else:
+        #         mbox.showwarning(title="Warning", message="Updates only possible every 15 minutes!")
+        # elif self.use_spaceTrack_TLEs.get() is True:
+        #     if sky_load.days_old(pre.LEO_TLE_FILE) > 0.01: # allow updates every 15 min
+        #         if pre.update_LEO_TLE_data() is True:
+        #             mbox.showinfo(title="Info", message="Updated SpaceTrack (LEO) TLE sources!")
+        #             self.tle_age_info.set(f"TLE sources are {pre.get_TLE_data_age(ogs_flag=False)} days old")
+        #             return
+        #         else:
+        #             mbox.showerror(title="Error", message="Could not update SpaceTrack (LEO) TLE sources, check log!")
+        #             return
+        #     else:
+        #         mbox.showwarning(title="Warning", message="Updates only possible every 15 minutes!")
+        # else:
+        #     mbox.showerror(title="Error", message="Select TLE Source first!")
+        #     return
 
     def _update_satellite_list(self):
         start_time = self.ts.utc(self.year.get(),
@@ -339,10 +341,13 @@ class APP(tk.Tk):
         self.OD_msg_label = ttk.Label(od_update_box, text="Starting...", anchor="center")
         self.OD_msg_label.pack(expand=True, fill="both", padx=self.WIDGET_PADX, pady=self.WIDGET_PADY)
 
+        ttk.Button(od_update_box, text="Abort current Satellite Analysis", command= lambda: self.OD_abort.set(True)) \
+            .pack(padx=self.WIDGET_PADX, pady=self.WIDGET_PADY)
+
         self.mission_runner.HYB_ascending_sc_type = self.hybrid_mode_sel.get()
         self._start_a_thread(self.mission_runner.run_OD_HYB_EPH_plan, (durationMin, startTimeString, hybrid_flag))
 
-        def poll_queue():
+        def check_OD_execution():
             try:
                 msg = self.mission_runner.OD_status_queue.get_nowait()
                 if msg == "Finished":
@@ -354,9 +359,13 @@ class APP(tk.Tk):
                     self.OD_msg_label.config(text=msg)
             except queue.Empty:
                 pass
-            self.after(200, poll_queue)
+            if self.OD_abort.get(): # abort has been pressed
+                self.mission_runner.OD_abort_flag = True # gets reset by missionplan_runner
+                self.OD_abort.set(False)
+                self.OD_msg_label.config(text="Aborting...")
+            self.after(200, check_OD_execution)
 
-        poll_queue()
+        check_OD_execution()
 
 
     def _handle_missionplan_completion(self, start_time, durationMin):

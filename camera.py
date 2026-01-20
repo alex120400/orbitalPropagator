@@ -260,7 +260,7 @@ class CameraWrapper():
             hdr = fits.Header()
             date_obs = currentDate.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
             hdr['DATE-OBS'] = (date_obs, "Timestamp of observation in UTC")
-            hdr['DATE-DATA'] = (timestamp_utc, "Timestamp of position data request in UTC")
+            hdr['DATE-DAT'] = (timestamp_utc, "Timestamp of position data request in UTC")
             # hdr['REFRACT'] = (refractionAutoslew, "ASA refraction value in arcsec")
             # hdr['CORRECT'] = (pointing_correction, "AltAz pointing correction of current model in radians")
             hdr['EXPTIME'] = (exposureTimeMs, "Exposure time in milliseconds")
