@@ -65,8 +65,11 @@ def detect_satellite(fits_path, visualize_flag=False, debug_flag=False, hw_bin_e
 
     # ---- Satellite candidate detection ----
     if len(contours) == 0:
+        if debug_flag:
+            print("Did not find any contours!")
         return None, None, None
 
+    circularity = -1
     for contour in contours:
         (x, y), radius = cv2.minEnclosingCircle(contour)
 
@@ -306,8 +309,11 @@ def get_abs_arcsec_offset_from_folder_for_HybridTracks(fits_folder_path, split_f
     with os.scandir(fits_folder_path) as entries:
         for entry in list(entries)[1:-1]: # exclude first and last image, usually buggy
             if entry.is_file() and entry.path.endswith(".fits"):
+                fits_path, fits_name = os.path.split(entry.path)
                 arcsec_offset = get_abs_arcsec_offset_from_single_image(entry.path, hw_bin_err_flag)
                 if arcsec_offset is None:
+                    print(f"Could not process image {fits_name}")
+                    detect_satellite(entry.path, hw_bin_err_flag=hw_bin_err_flag, debug_flag=True)
                     continue
 
                 fits_path, fits_name = os.path.split(entry.path)
@@ -317,7 +323,7 @@ def get_abs_arcsec_offset_from_folder_for_HybridTracks(fits_folder_path, split_f
                     frac_of_the_day_int = int(frac_of_the_day_str)
                 except ValueError:
                     print(f"Could not convert {frac_of_the_day_str} to int")
-                    return
+                    continue
                 if frac_of_the_day_int < (split_frac_of_day - safety_span):
                     # ascending, expected to be TLE
                     if ASC_TYPE == "TLE":
@@ -365,75 +371,119 @@ if __name__ == "__main__":
 
     #hybrid_fits_folder = "tracking\\2026Jan04__17_17__90\\SDA_1675_FracOfDay"
 
-    # hybrid_fits_folder = r"tracking\\2026Jan19__15_55__130\\12\\HYB_COSMOS-2170" # 72050347.2, OD asc
-    # hybrid_fits_folder = r"tracking\\2026Jan19__15_55__130\\13\\HYB_ONEWEB-0715" # 72598958.3, TLE asc
-    # hybrid_fits_folder = r"tracking\\2026Jan19__15_55__130\\14\\HYB_ONEWEB-0098" # 73185763.9, OD asc
-    # hybrid_fits_folder = r"tracking\\2026Jan19__15_55__130\\15\\HYB_DELTA-1-DEB" # 74008680.6, OD asc
-    # tle_arcsec_offsets, od_arcsec_offsets = get_abs_arcsec_offset_from_folder_for_HybridTracks(hybrid_fits_folder, 74008680.6, "OD")
+    # base_folder = r"tracking\\2026Jan19__15_55__130"
+    # hybrid_fits_folder = r"tracking\\2026Jan19__15_55__130\\1\\HYB_COSMOS-2170"
+    # args = 72050347.2, "OD"
+    # idx = 1
+    # hybrid_fits_folder = r"tracking\\2026Jan19__15_55__130\\2\\HYB_ONEWEB-0715"
+    # args = 72598958.3, "TLE"
+    # idx = 2
+    # hybrid_fits_folder = r"tracking\\2026Jan19__15_55__130\\3\\HYB_ONEWEB-0098"
+    # args = 73185763.9, "OD"
+    # idx = 3
+    # hybrid_fits_folder = r"tracking\\2026Jan19__15_55__130\\4\\HYB_DELTA-1-DEB"
+    # args =74008680.6, "OD"
+    # idx = 4
+    # hybrid_fits_folder = r"tracking\\2026Jan19__15_55__130\\5\\HYB_CZ-4-DEB" # only descending images available, very few work
+    # args = 74519097.2, "TLE"
+    # idx = 5
 
-    # ---- folders ----
-    base_dir = os.path.join("tracking","2026Jan19__15_55__130")
-    folders = [
-        "12",
-        "13",
-        "14",
-        "15",
-    ]
-
-    # ---- load data ----
-    od_data = []
-    tle_data = []
-
-    for f in folders:
-        od, tle = load_offsets(os.path.join(base_dir, f))
-        od_data.append(od)
-        tle_data.append(tle)
-
-    # ---- plotting ----
-    fig, ax = plt.subplots(figsize=(12, 6))
-
-    group_centers = np.arange(len(folders)) * 2 + 1
-    offset = 0.3
-
-    positions_od = group_centers - offset
-    positions_tle = group_centers + offset
-
-    ax.boxplot(
-        od_data,
-        positions=positions_od,
-        widths=0.4,
-        patch_artist=True,
-        boxprops=dict(facecolor="lightblue"),
-        showfliers=False
-    )
-
-    ax.boxplot(
-        tle_data,
-        positions=positions_tle,
-        widths=0.4,
-        patch_artist=True,
-        boxprops=dict(facecolor="orange"),
-        showfliers=False
-    )
-
-    # ---- axes formatting ----
-    ax.set_xticks(group_centers)
-    ax.set_xticklabels(["COSMOS-2170\nOD asc\n1409 km\n31° max El.", "ONEWEB-0715\nTLE asc\n1214 km\n38° max El.", "ONEWEB-0098\nOD asc\n1214 km\n42° max El.", "DELTA-1-DEB\nOD asc\n1605 km\n44° max El."], rotation=20)
-
-    ax.set_ylabel("Offsets [arcsec]")
-    ax.set_xlabel("Tracking Sets")
-    ax.set_title("OD vs TLE Offset Comparison")
-
-    ax.grid(axis="y", linestyle="--", alpha=0.7)
-
-    # ---- legend (manual) ----
-    ax.plot([], [], color="lightblue", label="OD")
-    ax.plot([], [], color="orange", label="TLE")
-    ax.legend()
-
-    plt.tight_layout()
-    plt.show()
+    # base_folder = r"tracking\\2026Jan20__16_00__120"
+    # hybrid_fits_folder = r"tracking\\2026Jan20__16_00__120\\1\\HYB_COSMOS-2170"
+    # args = 67057291.7, "OD"
+    # idx = 1
+    # hybrid_fits_folder = r"tracking\\2026Jan20__16_00__120\\2\\HYB_DELTA-1-DEB"
+    # args = 68102430.6, "TLE"
+    # idx = 2
+    # hybrid_fits_folder = r"tracking\\2026Jan20__16_00__120\\3\\HYB_SL-8-R-B"
+    # args = 70831597.2, "OD"
+    # idx = 3
+    # hybrid_fits_folder = r"tracking\\2026Jan20__16_00__120\\4\\HYB_KITSAT-3"
+    # args = 72046875.0, "TLE"
+    # idx=4
+    # hybrid_fits_folder = r"tracking\\2026Jan20__16_00__120\\5\\HYB_ONEWEB-0399"
+    # args = 72630208.3, "TLE"
+    # idx = 5
+    # hybrid_fits_folder = r"tracking\\2026Jan20__16_00__120\\6\\HYB_NOAA-6"
+    # args = 74237847.2, "TLE"
+    # idx = 6
 
 
+    # tle_arcsec_offsets, od_arcsec_offsets = get_abs_arcsec_offset_from_folder_for_HybridTracks(hybrid_fits_folder,  *args)
+    #
+    # np.savetxt(f"{base_folder}\\{idx}\\TLE_offsets.txt",
+    #            tle_arcsec_offsets,
+    #            header="abs offset [arcsec]"
+    #            )
+    # np.savetxt(f"{base_folder}\\{idx}\\OD_offsets.txt",
+    #            od_arcsec_offsets,
+    #            header="abs offset [arcsec]"
+    #            )
 
 
+    # # ---- folders ----
+    # base_dir = os.path.join("tracking","2026Jan19__15_55__130")
+    # folders = [
+    #     "12",
+    #     "13",
+    #     "14",
+    #     "15",
+    # ]
+    #
+    # # ---- load data ----
+    # od_data = []
+    # tle_data = []
+    #
+    # for f in folders:
+    #     od, tle = load_offsets(os.path.join(base_dir, f))
+    #     od_data.append(od)
+    #     tle_data.append(tle)
+    #
+    # # ---- plotting ----
+    # fig, ax = plt.subplots(figsize=(12, 6))
+    #
+    # group_centers = np.arange(len(folders)) * 2 + 1
+    # offset = 0.3
+    #
+    # positions_od = group_centers - offset
+    # positions_tle = group_centers + offset
+    #
+    # ax.boxplot(
+    #     od_data,
+    #     positions=positions_od,
+    #     widths=0.4,
+    #     patch_artist=True,
+    #     boxprops=dict(facecolor="lightblue"),
+    #     showfliers=False
+    # )
+    #
+    # ax.boxplot(
+    #     tle_data,
+    #     positions=positions_tle,
+    #     widths=0.4,
+    #     patch_artist=True,
+    #     boxprops=dict(facecolor="orange"),
+    #     showfliers=False
+    # )
+    #
+    # # ---- axes formatting ----
+    # ax.set_xticks(group_centers)
+    # ax.set_xticklabels(["COSMOS-2170\nOD asc\n1409 km\n31° max El.", "ONEWEB-0715\nTLE asc\n1214 km\n38° max El.", "ONEWEB-0098\nOD asc\n1214 km\n42° max El.", "DELTA-1-DEB\nOD asc\n1605 km\n44° max El."], rotation=20)
+    #
+    # ax.set_ylabel("Offsets [arcsec]")
+    # ax.set_xlabel("Tracking Sets")
+    # ax.set_title("OD vs TLE Offset Comparison")
+    #
+    # ax.grid(axis="y", linestyle="--", alpha=0.7)
+    #
+    # # ---- legend (manual) ----
+    # ax.plot([], [], color="lightblue", label="OD")
+    # ax.plot([], [], color="orange", label="TLE")
+    # ax.legend()
+    #
+    # plt.tight_layout()
+    # plt.show()
+    #
+    #
+    #
+    #
