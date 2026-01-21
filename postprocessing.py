@@ -141,10 +141,10 @@ def detect_satellite(fits_path, visualize_flag=False, debug_flag=False, hw_bin_e
 
     # ---- Visualization ----
     if visualize_flag:
-        print(f"Satellites data: m00={satellite_m00s[best_sat_idx]}, d={satellite_distances[best_sat_idx]}")
+        print(f"Satellites data: m00={satellite_m00s[best_sat_idx]}, d={satellite_distances[best_sat_idx]}, center:{best_candidate[0]}, centroid: {best_centroid}")
         cv2.namedWindow("Detected Star", cv2.WINDOW_NORMAL)
         cv2.resizeWindow("Detected Star", 1000, 800)
-        cv2.circle(output_image, best_candidate[0], int(best_candidate[1]), (0, 255, 0), 3)
+        cv2.circle(output_image, (int(best_candidate[0][0]), int(best_candidate[0][1])), int(best_candidate[1]), (0, 255, 0), 3)
         cv2.imshow("Detected Star", output_image)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
@@ -290,6 +290,7 @@ def get_abs_arcsec_offset_from_single_image(fits_image_path, hw_bin_err_flag=Tru
         image_np = image_np[:, :-2 * err_bits]  # need to remove twice the bar to keep center of image correct
 
     im_height, im_width = image_np.shape
+    # print(f"shape is {image_np.shape}")
     cX = im_width / 2
     cY = im_height / 2
 
@@ -326,16 +327,18 @@ def get_abs_arcsec_offset_from_folder_for_HybridTracks(fits_folder_path, split_f
                     continue
                 if frac_of_the_day_int < (split_frac_of_day - safety_span):
                     if ASC_TYPE == "TLE":
-                        # print(f"TLE exported: {cont_numb}")
                         TLE_offsets.append(arcsec_offset)
+                        # print(f"{cont_numb} added to TLE_offsets")
                     else:
                         OD_offsets.append(arcsec_offset)
+                        # print(f"{cont_numb} added to OD_offsets")
                 elif frac_of_the_day_int > (split_frac_of_day + safety_span):
                     if ASC_TYPE == "TLE":
                         OD_offsets.append(arcsec_offset)
-                        #print(f"OD exported: {cont_numb}")
+                        # print(f"{cont_numb} added to OD_offsets")
                     else:
                         TLE_offsets.append(arcsec_offset)
+                        # print(f"{cont_numb} added to TLE_offsets")
                 else:
                     # in safety region which is excluded
                     #print(f"Skipped: {cont_numb}")
@@ -367,7 +370,7 @@ if __name__ == "__main__":
 
 
 
-    #hybrid_fits_folder = "tracking\\2026Jan04__17_17__90\\SDA_1675_FracOfDay"
+    # hybrid_fits_folder = "tracking\\2026Jan04__17_17__90\\SDA_1675_FracOfDay"
 
     # base_folder = r"tracking\\2026Jan19__15_55__130"
     # hybrid_fits_folder = r"tracking\\2026Jan19__15_55__130\\1\\HYB_COSMOS-2170"
@@ -428,69 +431,69 @@ if __name__ == "__main__":
     # folders = ["1", "2", "3", "4"]
 
     # ---- Measurement 2, Tuesday Jan 20 ----
-    base_dir = "2026Jan20__16_00__120" # has folders 1, 2, 3, 4, 5, 6
-    labels = ["COSMOS-2170 (21784)\nOD asc\n1409 km\n67° max El.",
-              "DELTA-1-DEB (12217U)\nTLE asc\n809 km\n40° max El.",
-              "SL-8 R/B (13034U)\nOD asc\n977 km\n52° max El.",
-              "KITSAT 3 (25756U)\nTLE asc\n704 km\n56° max El.",
-              "ONEWEB-0399 (50479U)\nTLE asc\n1215 km\n40° max El.",
-              "NOAA 6 (11416U)\nTLE asc\n771 km\n77° max El."]
-    folders = ["1", "2", "3", "4", "5", "6"]
-
-
-    # ---- load data ----
-    od_data = []
-    tle_data = []
-
-    for f in folders:
-        od, tle = load_offsets(os.path.join("tracking",base_dir, f))
-        od_data.append(od)
-        tle_data.append(tle)
-
-    # ---- plotting ----
-    fig, ax = plt.subplots(figsize=(12, 6))
-
-    group_centers = np.arange(len(folders)) * 2 + 1
-    offset = 0.3
-
-    positions_od = group_centers - offset
-    positions_tle = group_centers + offset
-
-    ax.boxplot(
-        od_data,
-        positions=positions_od,
-        widths=0.4,
-        patch_artist=True,
-        boxprops=dict(facecolor="lightblue"),
-        showfliers=False
-    )
-
-    ax.boxplot(
-        tle_data,
-        positions=positions_tle,
-        widths=0.4,
-        patch_artist=True,
-        boxprops=dict(facecolor="orange"),
-        showfliers=False
-    )
-
-    # ---- axes formatting ----
-    ax.set_xticks(group_centers)
-    ax.set_xticklabels(labels, rotation=20)
-
-    ax.set_ylabel("Offsets [arcsec]")
-    ax.set_xlabel("Tracking Sets")
-    ax.set_title("OD vs TLE Tracking Offset Comparison for Measurement folder: " + base_dir)
-
-    ax.grid(axis="y", linestyle="--", alpha=0.7)
-
-    # ---- legend (manual) ----
-    ax.plot([], [], color="lightblue", label="OD")
-    ax.plot([], [], color="orange", label="TLE")
-    ax.legend()
-
-    plt.tight_layout()
-    plt.show()
+    # base_dir = "2026Jan20__16_00__120" # has folders 1, 2, 3, 4, 5, 6
+    # labels = ["COSMOS-2170 (21784)\nOD asc\n1409 km\n67° max El.",
+    #           "DELTA-1-DEB (12217U)\nTLE asc\n809 km\n40° max El.",
+    #           "SL-8 R/B (13034U)\nOD asc\n977 km\n52° max El.",
+    #           "KITSAT 3 (25756U)\nTLE asc\n704 km\n56° max El.",
+    #           "ONEWEB-0399 (50479U)\nTLE asc\n1215 km\n40° max El.",
+    #           "NOAA 6 (11416U)\nTLE asc\n771 km\n77° max El."]
+    # folders = ["1", "2", "3", "4", "5", "6"]
+    #
+    #
+    # # ---- load data ----
+    # od_data = []
+    # tle_data = []
+    #
+    # for f in folders:
+    #     od, tle = load_offsets(os.path.join("tracking",base_dir, f))
+    #     od_data.append(od)
+    #     tle_data.append(tle)
+    #
+    # # ---- plotting ----
+    # fig, ax = plt.subplots(figsize=(12, 6))
+    #
+    # group_centers = np.arange(len(folders)) * 2 + 1
+    # offset = 0.3
+    #
+    # positions_od = group_centers - offset
+    # positions_tle = group_centers + offset
+    #
+    # ax.boxplot(
+    #     od_data,
+    #     positions=positions_od,
+    #     widths=0.4,
+    #     patch_artist=True,
+    #     boxprops=dict(facecolor="lightblue"),
+    #     showfliers=False
+    # )
+    #
+    # ax.boxplot(
+    #     tle_data,
+    #     positions=positions_tle,
+    #     widths=0.4,
+    #     patch_artist=True,
+    #     boxprops=dict(facecolor="orange"),
+    #     showfliers=False
+    # )
+    #
+    # # ---- axes formatting ----
+    # ax.set_xticks(group_centers)
+    # ax.set_xticklabels(labels, rotation=20)
+    #
+    # ax.set_ylabel("Offsets [arcsec]")
+    # ax.set_xlabel("Tracking Sets")
+    # ax.set_title("OD vs TLE Tracking Offset Comparison for Measurement folder: " + base_dir)
+    #
+    # ax.grid(axis="y", linestyle="--", alpha=0.7)
+    #
+    # # ---- legend (manual) ----
+    # ax.plot([], [], color="lightblue", label="OD")
+    # ax.plot([], [], color="orange", label="TLE")
+    # ax.legend()
+    #
+    # plt.tight_layout()
+    # plt.show()
 
 
 
