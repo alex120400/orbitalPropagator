@@ -325,14 +325,12 @@ def get_abs_arcsec_offset_from_folder_for_HybridTracks(fits_folder_path, split_f
                     print(f"Could not convert {frac_of_the_day_str} to int")
                     continue
                 if frac_of_the_day_int < (split_frac_of_day - safety_span):
-                    # ascending, expected to be TLE
                     if ASC_TYPE == "TLE":
                         # print(f"TLE exported: {cont_numb}")
                         TLE_offsets.append(arcsec_offset)
                     else:
                         OD_offsets.append(arcsec_offset)
                 elif frac_of_the_day_int > (split_frac_of_day + safety_span):
-                    # desceding, expected to be OD
                     if ASC_TYPE == "TLE":
                         OD_offsets.append(arcsec_offset)
                         #print(f"OD exported: {cont_numb}")
@@ -421,69 +419,79 @@ if __name__ == "__main__":
     #            )
 
 
-    # # ---- folders ----
-    # base_dir = os.path.join("tracking","2026Jan19__15_55__130")
-    # folders = [
-    #     "12",
-    #     "13",
-    #     "14",
-    #     "15",
-    # ]
-    #
-    # # ---- load data ----
-    # od_data = []
-    # tle_data = []
-    #
-    # for f in folders:
-    #     od, tle = load_offsets(os.path.join(base_dir, f))
-    #     od_data.append(od)
-    #     tle_data.append(tle)
-    #
-    # # ---- plotting ----
-    # fig, ax = plt.subplots(figsize=(12, 6))
-    #
-    # group_centers = np.arange(len(folders)) * 2 + 1
-    # offset = 0.3
-    #
-    # positions_od = group_centers - offset
-    # positions_tle = group_centers + offset
-    #
-    # ax.boxplot(
-    #     od_data,
-    #     positions=positions_od,
-    #     widths=0.4,
-    #     patch_artist=True,
-    #     boxprops=dict(facecolor="lightblue"),
-    #     showfliers=False
-    # )
-    #
-    # ax.boxplot(
-    #     tle_data,
-    #     positions=positions_tle,
-    #     widths=0.4,
-    #     patch_artist=True,
-    #     boxprops=dict(facecolor="orange"),
-    #     showfliers=False
-    # )
-    #
-    # # ---- axes formatting ----
-    # ax.set_xticks(group_centers)
-    # ax.set_xticklabels(["COSMOS-2170\nOD asc\n1409 km\n31° max El.", "ONEWEB-0715\nTLE asc\n1214 km\n38° max El.", "ONEWEB-0098\nOD asc\n1214 km\n42° max El.", "DELTA-1-DEB\nOD asc\n1605 km\n44° max El."], rotation=20)
-    #
-    # ax.set_ylabel("Offsets [arcsec]")
-    # ax.set_xlabel("Tracking Sets")
-    # ax.set_title("OD vs TLE Offset Comparison")
-    #
-    # ax.grid(axis="y", linestyle="--", alpha=0.7)
-    #
-    # # ---- legend (manual) ----
-    # ax.plot([], [], color="lightblue", label="OD")
-    # ax.plot([], [], color="orange", label="TLE")
-    # ax.legend()
-    #
-    # plt.tight_layout()
-    # plt.show()
-    #
-    #
-    #
-    #
+    # ---- Measurement 1, Monday Jan 19 ----
+    # base_dir = "2026Jan19__15_55__130" # has folders 1, 2, 3, 4
+    # labels = ["COSMOS-2170\nOD asc\n1409 km\n31° max El.",
+    #           "ONEWEB-0715\nTLE asc\n1214 km\n38° max El.",
+    #           "ONEWEB-0098\nOD asc\n1214 km\n42° max El.",
+    #           "DELTA-1-DEB\nOD asc\n1605 km\n44° max El."]
+    # folders = ["1", "2", "3", "4"]
+
+    # ---- Measurement 2, Tuesday Jan 20 ----
+    base_dir = "2026Jan20__16_00__120" # has folders 1, 2, 3, 4, 5, 6
+    labels = ["COSMOS-2170 (21784)\nOD asc\n1409 km\n67° max El.",
+              "DELTA-1-DEB (12217U)\nTLE asc\n809 km\n40° max El.",
+              "SL-8 R/B (13034U)\nOD asc\n977 km\n52° max El.",
+              "KITSAT 3 (25756U)\nTLE asc\n704 km\n56° max El.",
+              "ONEWEB-0399 (50479U)\nTLE asc\n1215 km\n40° max El.",
+              "NOAA 6 (11416U)\nTLE asc\n771 km\n77° max El."]
+    folders = ["1", "2", "3", "4", "5", "6"]
+
+
+    # ---- load data ----
+    od_data = []
+    tle_data = []
+
+    for f in folders:
+        od, tle = load_offsets(os.path.join("tracking",base_dir, f))
+        od_data.append(od)
+        tle_data.append(tle)
+
+    # ---- plotting ----
+    fig, ax = plt.subplots(figsize=(12, 6))
+
+    group_centers = np.arange(len(folders)) * 2 + 1
+    offset = 0.3
+
+    positions_od = group_centers - offset
+    positions_tle = group_centers + offset
+
+    ax.boxplot(
+        od_data,
+        positions=positions_od,
+        widths=0.4,
+        patch_artist=True,
+        boxprops=dict(facecolor="lightblue"),
+        showfliers=False
+    )
+
+    ax.boxplot(
+        tle_data,
+        positions=positions_tle,
+        widths=0.4,
+        patch_artist=True,
+        boxprops=dict(facecolor="orange"),
+        showfliers=False
+    )
+
+    # ---- axes formatting ----
+    ax.set_xticks(group_centers)
+    ax.set_xticklabels(labels, rotation=20)
+
+    ax.set_ylabel("Offsets [arcsec]")
+    ax.set_xlabel("Tracking Sets")
+    ax.set_title("OD vs TLE Tracking Offset Comparison for Measurement folder: " + base_dir)
+
+    ax.grid(axis="y", linestyle="--", alpha=0.7)
+
+    # ---- legend (manual) ----
+    ax.plot([], [], color="lightblue", label="OD")
+    ax.plot([], [], color="orange", label="TLE")
+    ax.legend()
+
+    plt.tight_layout()
+    plt.show()
+
+
+
+
