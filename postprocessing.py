@@ -79,7 +79,7 @@ def fits_to_png_with_center_cross_and_stretch(
 
     # --- Crop last 8 columns (as in your original code) ---
     if image.shape[1] > 8:
-        image = image[:, :-8]
+        image = image[:, :-2*8]
 
 
     # Estimate background (robust for noisy images)

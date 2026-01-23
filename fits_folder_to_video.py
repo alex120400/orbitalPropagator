@@ -18,7 +18,7 @@ def stretch_fits_image(image):
 
     # Crop last 8 columns (as in your original code)
     if image.shape[1] > 8:
-        image = image[:, :-8]
+        image = image[:, :-2*8]
 
     # --- Background subtraction ---
     background = np.median(image)
@@ -42,7 +42,7 @@ def stretch_fits_image(image):
     return (x * 255).astype(np.uint8)
 
 
-def draw_center_cross(img_bgr, size=20, thickness=2):
+def draw_center_cross(img_bgr, size=40, thickness=3):
     """
     Draw a red cross at the center of a BGR image.
     """
@@ -132,9 +132,9 @@ def fits_folder_to_video(
 # ----------------------------
 if __name__ == "__main__":
     fits_folder_to_video(
-        fits_dir="fits_frames",
+        fits_dir=r"tracking/2026Jan20__16_00__120/4/HYB_KITSAT-3",
         output_video="output.mp4",
         fps=15,
-        cross_size=25,
-        cross_thickness=2
+        cross_size=40,
+        cross_thickness=3
     )
