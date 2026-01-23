@@ -8,6 +8,16 @@ from astropy.io import fits
 import matplotlib.pyplot as plt
 import cv2
 
+plt.rcParams.update({
+    "axes.titlesize": 16,
+    "axes.labelsize": 14,
+    "xtick.labelsize": 12,
+    "ytick.labelsize": 12,
+    "legend.fontsize": 12,
+    "figure.titlesize": 18
+})
+
+
 
 def show_fits_image_and_header(fits_file, smart_grey_scale=True):
     with fits.open(fits_file) as hdul:
@@ -27,6 +37,94 @@ def show_fits_image_and_header(fits_file, smart_grey_scale=True):
 
     plt.colorbar()
     plt.show()
+
+
+
+def fits_to_png_with_center_cross_and_stretch(
+    fits_path,
+    png_path,
+    cross_size=20,
+    cross_thickness=2,
+    percentile_low=1,
+    percentile_high=99
+):
+    """
+    Reads a FITS file, enhances visibility using percentile stretching,
+    draws a red cross at the image center, and saves as PNG.
+
+    Parameters
+    ----------
+    fits_path : str
+        Path to input FITS file.
+    png_path : str
+        Path to output PNG file.
+    cross_size : int
+        Half-length of cross arms in pixels.
+    cross_thickness : int
+        Thickness of cross lines.
+    percentile_low : float
+        Lower percentile for contrast stretch.
+    percentile_high : float
+        Upper percentile for contrast stretch.
+    """
+
+    # --- Load FITS ---
+    with fits.open(fits_path) as hdul:
+        image = hdul[0].data
+
+    image = np.squeeze(image)
+
+    if image.ndim != 2:
+        raise ValueError(f"Expected 2D image, got {image.shape}")
+
+    # --- Crop last 8 columns (as in your original code) ---
+    if image.shape[1] > 8:
+        image = image[:, :-8]
+
+
+    # Estimate background (robust for noisy images)
+    background = np.median(image)
+
+    # Subtract background
+    x = image - background
+
+    # Remove negative values
+    x[x < 0] = 0
+
+    # Use high percentile for stars only
+    vmax = np.percentile(x, 99.9)
+
+    if vmax <= 0:
+        stretched = np.zeros_like(x, dtype=np.uint8)
+    else:
+        # Normalize
+        x = np.clip(x, 0, vmax)
+        x = x / vmax
+
+        # Strong asinh stretch
+        a = 30
+        x = np.arcsinh(a * x) / np.arcsinh(a)
+
+        stretched = (x * 255).astype(np.uint8)
+
+
+    # --- Convert to BGR for OpenCV ---
+    img_bgr = cv2.cvtColor(stretched, cv2.COLOR_GRAY2BGR)
+
+    # --- Compute image center ---
+    h, w = img_bgr.shape[:2]
+    cx, cy = w // 2, h // 2
+
+    # --- Draw red cross ---
+    red = (0, 0, 255)
+
+    cv2.line(img_bgr, (cx - cross_size, cy), (cx + cross_size, cy),
+             red, thickness=cross_thickness)
+    cv2.line(img_bgr, (cx, cy - cross_size), (cx, cy + cross_size),
+             red, thickness=cross_thickness)
+
+    # --- Save PNG ---
+    cv2.imwrite(png_path, img_bgr)
 
 
 def detect_satellite(fits_path, visualize_flag=False, debug_flag=False, hw_bin_err_flag=True):
@@ -359,6 +457,58 @@ def load_offsets(folder_path):
     tle = np.loadtxt(os.path.join(folder_path, "TLE_offsets.txt"), skiprows=1)
     return od, tle
 
+def plot_single_measurement(base_dir, folders, labels, title_suffix):
+    """Plots OD vs TLE grouped boxplots for one measurement folder."""
+
+    od_data = []
+    tle_data = []
+
+    for f in folders:
+        od, tle = load_offsets(os.path.join("tracking", base_dir, f))
+        od_data.append(od)
+        tle_data.append(tle)
+
+    fig, ax = plt.subplots(figsize=(9, 6))
+
+    group_centers = np.arange(len(folders)) * 2 + 1
+    offset = 0.3
+
+    ax.boxplot(
+        od_data,
+        positions=group_centers - offset,
+        widths=0.4,
+        patch_artist=True,
+        boxprops=dict(facecolor="lightblue"),
+        showfliers=False
+    )
+
+    ax.boxplot(
+        tle_data,
+        positions=group_centers + offset,
+        widths=0.4,
+        patch_artist=True,
+        boxprops=dict(facecolor="orange"),
+        showfliers=False
+    )
+
+    ax.set_xticks(group_centers)
+    ax.set_xticklabels(labels, rotation=40)
+
+    ax.set_ylabel("Offsets [arcsec]")
+    ax.set_xlabel("Tracking Sets")
+    ax.set_title(f"OD vs TLE Tracking Offset Comparison\n{title_suffix}")
+    ax.grid(axis="y", linestyle="--", alpha=0.7)
+
+    ax.plot([], [], color="lightblue", label="OD")
+    ax.plot([], [], color="orange", label="TLE")
+    ax.legend()
+
+    plt.tight_layout()
+    plt.show()
+
+    # return merged data for time-evolution plot
+    return np.concatenate(od_data), np.concatenate(tle_data)
+
 
 if __name__ == "__main__":
     # fits_folder = "tracking\\2026Jan04__17_07__90\\RIGIDSPHERE-2-(LCS-4)"
@@ -421,80 +571,94 @@ if __name__ == "__main__":
     #            header="abs offset [arcsec]"
     #            )
 
+    measurements = [
+        {
+            "base_dir": "2026Jan19__15_55__130",
+            "folders": ["1", "2", "3", "4"],
+            "labels": [
+                "COSMOS-2170\nAscending Track: OD\nHeight: 1409 km\nMax El.: 31°",
+                "ONEWEB-0715\nAscending Track: TLE\nHeight: 1214 km\nMax El.: 38°",
+                "ONEWEB-0098\nAscending Track: OD\nHeight: 1214 km\nMax El.: 42°",
+                "DELTA-1-DEB\nAscending Track: OD\nHeight: 1605 km\nMax El.: 44°"
+            ],
+            "title": "Measurement 1\nJan. 19. 16:00 - 18:00 UTC"
+        },
+        {
+            "base_dir": "2026Jan20__16_00__120",
+            "folders": ["1", "2", "3", "4", "5", "6"],
+            "labels": [
+                "COSMOS-2170 (21784)\nAscending Track: OD\nHeight: 1409 km\nMax El.: 67°",
+                "DELTA-1-DEB (12217U)\nAscending Track: TLE\nHeight: 809 km\nMax El.: 40°",
+                "SL-8 R/B (13034U)\nAscending Track: OD\nHeight: 977 km\nMax El.: 52°",
+                "KITSAT 3 (25756U)\nAscending Track: TLE\nHeight: 704 km\nMax El.: 56°",
+                "ONEWEB-0399 (50479U)\nAscending Track: TLE\nHeight: 1215 km\nMax El.: 40°",
+                "NOAA 6 (11416U)\nAscending Track: TLE\nHeight: 771 km\nMax El.: 77°"
+            ],
+            "title": "Measurement 2\nJan. 20. 16:00 - 18:00 UTC"
+        }
+    ]
 
-    # ---- Measurement 1, Monday Jan 19 ----
-    # base_dir = "2026Jan19__15_55__130" # has folders 1, 2, 3, 4
-    # labels = ["COSMOS-2170\nOD asc\n1409 km\n31° max El.",
-    #           "ONEWEB-0715\nTLE asc\n1214 km\n38° max El.",
-    #           "ONEWEB-0098\nOD asc\n1214 km\n42° max El.",
-    #           "DELTA-1-DEB\nOD asc\n1605 km\n44° max El."]
-    # folders = ["1", "2", "3", "4"]
+    merged_od = []
+    merged_tle = []
+    measurement_labels = []
 
-    # ---- Measurement 2, Tuesday Jan 20 ----
-    # base_dir = "2026Jan20__16_00__120" # has folders 1, 2, 3, 4, 5, 6
-    # labels = ["COSMOS-2170 (21784)\nOD asc\n1409 km\n67° max El.",
-    #           "DELTA-1-DEB (12217U)\nTLE asc\n809 km\n40° max El.",
-    #           "SL-8 R/B (13034U)\nOD asc\n977 km\n52° max El.",
-    #           "KITSAT 3 (25756U)\nTLE asc\n704 km\n56° max El.",
-    #           "ONEWEB-0399 (50479U)\nTLE asc\n1215 km\n40° max El.",
-    #           "NOAA 6 (11416U)\nTLE asc\n771 km\n77° max El."]
-    # folders = ["1", "2", "3", "4", "5", "6"]
-    #
-    #
-    # # ---- load data ----
-    # od_data = []
-    # tle_data = []
-    #
-    # for f in folders:
-    #     od, tle = load_offsets(os.path.join("tracking",base_dir, f))
-    #     od_data.append(od)
-    #     tle_data.append(tle)
-    #
-    # # ---- plotting ----
-    # fig, ax = plt.subplots(figsize=(12, 6))
-    #
-    # group_centers = np.arange(len(folders)) * 2 + 1
-    # offset = 0.3
-    #
-    # positions_od = group_centers - offset
-    # positions_tle = group_centers + offset
-    #
-    # ax.boxplot(
-    #     od_data,
-    #     positions=positions_od,
-    #     widths=0.4,
-    #     patch_artist=True,
-    #     boxprops=dict(facecolor="lightblue"),
-    #     showfliers=False
+    for m in measurements:
+        od_all, tle_all = plot_single_measurement(
+            m["base_dir"],
+            m["folders"],
+            m["labels"],
+            m["title"]
+        )
+
+        merged_od.append(od_all)
+        merged_tle.append(tle_all)
+        measurement_labels.append(m["title"])
+
+    fig, ax = plt.subplots(figsize=(9, 6))
+
+    group_centers = np.arange(len(merged_od)) * 2 + 1
+    offset = 0.3
+
+    ax.boxplot(
+        merged_od,
+        positions=group_centers - offset,
+        widths=0.4,
+        patch_artist=True,
+        boxprops=dict(facecolor="lightblue"),
+        showfliers=False
+    )
+
+    ax.boxplot(
+        merged_tle,
+        positions=group_centers + offset,
+        widths=0.4,
+        patch_artist=True,
+        boxprops=dict(facecolor="orange"),
+        showfliers=False
+    )
+
+    ax.set_xticks(group_centers)
+    ax.set_xticklabels(measurement_labels)
+
+    ax.set_ylabel("Offsets [arcsec]")
+    ax.set_xlabel("Measurements (time progression)")
+    ax.set_title("Time Evolution of Tracking Offsets (Merged per Measurement)")
+    ax.grid(axis="y", linestyle="--", alpha=0.7)
+
+    ax.plot([], [], color="lightblue", label="OD")
+    ax.plot([], [], color="orange", label="TLE")
+    ax.legend()
+
+    plt.tight_layout()
+    plt.show()
+
+    # fits_to_png_with_center_cross_and_stretch(
+    #     "tracking\\2026Jan04__17_07__90\\RIGIDSPHERE-2-(LCS-4)\\005-Alt26-Az143.fits",
+    #     r"star_image_centered.png",
+    #     cross_size=40,
+    #     cross_thickness=3,
+    #     percentile_low=1,
+    #     percentile_high=99
     # )
-    #
-    # ax.boxplot(
-    #     tle_data,
-    #     positions=positions_tle,
-    #     widths=0.4,
-    #     patch_artist=True,
-    #     boxprops=dict(facecolor="orange"),
-    #     showfliers=False
-    # )
-    #
-    # # ---- axes formatting ----
-    # ax.set_xticks(group_centers)
-    # ax.set_xticklabels(labels, rotation=20)
-    #
-    # ax.set_ylabel("Offsets [arcsec]")
-    # ax.set_xlabel("Tracking Sets")
-    # ax.set_title("OD vs TLE Tracking Offset Comparison for Measurement folder: " + base_dir)
-    #
-    # ax.grid(axis="y", linestyle="--", alpha=0.7)
-    #
-    # # ---- legend (manual) ----
-    # ax.plot([], [], color="lightblue", label="OD")
-    # ax.plot([], [], color="orange", label="TLE")
-    # ax.legend()
-    #
-    # plt.tight_layout()
-    # plt.show()
-
-
 
 

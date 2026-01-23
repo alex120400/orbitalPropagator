@@ -10,10 +10,10 @@ except ImportError:
 
 
 mission_plan_path = os.path.join(MISSION_PLAN_PATH,
-                                 "20260114TLEs_data_generation_plans",
+                                 "simulation",
                                  "OD_PointSolution_approach_simulation.MissionPlan")
 observation_data_path = os.path.join(MISSION_PLAN_PATH,
-                                    "20260114TLEs_data_generation_plans",
+                                    "simulation",
                                     "observation_data")
 ff_install_dir = ExampleUtilities.get_freeflyer_install_directory()
 
