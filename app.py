@@ -250,7 +250,6 @@ class APP(tk.Tk):
             self.tle_age_info.set("Select TLE Source")
 
     def _update_tle_sources(self):
-        # pass # only during experimentation phase, don't want updates right now
         if self.use_ogs_TLEs.get() is True:
             if sky_load.days_old(OGS_TLE_FILE) > 0.01:
                 if pre.update_ogs_TLE_data() is True: # allow updates every 15 min

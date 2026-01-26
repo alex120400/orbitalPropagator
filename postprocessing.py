@@ -602,63 +602,63 @@ if __name__ == "__main__":
     merged_tle = []
     measurement_labels = []
 
-    for m in measurements:
-        od_all, tle_all = plot_single_measurement(
-            m["base_dir"],
-            m["folders"],
-            m["labels"],
-            m["title"]
-        )
-
-        merged_od.append(od_all)
-        merged_tle.append(tle_all)
-        measurement_labels.append(m["title"])
-
-    fig, ax = plt.subplots(figsize=(9, 6))
-
-    group_centers = np.arange(len(merged_od)) * 2 + 1
-    offset = 0.3
-
-    ax.boxplot(
-        merged_od,
-        positions=group_centers - offset,
-        widths=0.4,
-        patch_artist=True,
-        boxprops=dict(facecolor="lightblue"),
-        showfliers=False
-    )
-
-    ax.boxplot(
-        merged_tle,
-        positions=group_centers + offset,
-        widths=0.4,
-        patch_artist=True,
-        boxprops=dict(facecolor="orange"),
-        showfliers=False
-    )
-
-    ax.set_xticks(group_centers)
-    ax.set_xticklabels(measurement_labels)
-
-    ax.set_ylabel("Offsets [arcsec]")
-    ax.set_xlabel("Measurements (time progression)")
-    ax.set_title("Time Evolution of Tracking Offsets (Merged per Measurement)")
-    ax.grid(axis="y", linestyle="--", alpha=0.7)
-
-    ax.plot([], [], color="lightblue", label="OD")
-    ax.plot([], [], color="orange", label="TLE")
-    ax.legend()
-
-    plt.tight_layout()
-    plt.show()
-
-    # fits_to_png_with_center_cross_and_stretch(
-    #     "tracking\\2026Jan04__17_07__90\\RIGIDSPHERE-2-(LCS-4)\\005-Alt26-Az143.fits",
-    #     r"star_image_centered.png",
-    #     cross_size=40,
-    #     cross_thickness=3,
-    #     percentile_low=1,
-    #     percentile_high=99
+    # for m in measurements:
+    #     od_all, tle_all = plot_single_measurement(
+    #         m["base_dir"],
+    #         m["folders"],
+    #         m["labels"],
+    #         m["title"]
+    #     )
+    #
+    #     merged_od.append(od_all)
+    #     merged_tle.append(tle_all)
+    #     measurement_labels.append(m["title"])
+    #
+    # fig, ax = plt.subplots(figsize=(9, 6))
+    #
+    # group_centers = np.arange(len(merged_od)) * 2 + 1
+    # offset = 0.3
+    #
+    # ax.boxplot(
+    #     merged_od,
+    #     positions=group_centers - offset,
+    #     widths=0.4,
+    #     patch_artist=True,
+    #     boxprops=dict(facecolor="lightblue"),
+    #     showfliers=False
     # )
+    #
+    # ax.boxplot(
+    #     merged_tle,
+    #     positions=group_centers + offset,
+    #     widths=0.4,
+    #     patch_artist=True,
+    #     boxprops=dict(facecolor="orange"),
+    #     showfliers=False
+    # )
+    #
+    # ax.set_xticks(group_centers)
+    # ax.set_xticklabels(measurement_labels)
+    #
+    # ax.set_ylabel("Offsets [arcsec]")
+    # ax.set_xlabel("Measurements (time progression)")
+    # ax.set_title("Time Evolution of Tracking Offsets (Merged per Measurement)")
+    # ax.grid(axis="y", linestyle="--", alpha=0.7)
+    #
+    # ax.plot([], [], color="lightblue", label="OD")
+    # ax.plot([], [], color="orange", label="TLE")
+    # ax.legend()
+    #
+    # plt.tight_layout()
+    # plt.show()
+
+    fits_to_png_with_center_cross_and_stretch(
+        r"tracking/2026Jan20__16_00__120/4/010-FracOfDay71997297.fits",
+        r"star_image_centered.png",
+        cross_size=40,
+        cross_thickness=3,
+        percentile_low=1,
+        percentile_high=99
+    )
 
 
