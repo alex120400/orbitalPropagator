@@ -73,6 +73,7 @@ def fits_to_png_with_center_cross_and_stretch(
         image = hdul[0].data
 
     image = np.squeeze(image)
+    print(image.shape)
 
     if image.ndim != 2:
         raise ValueError(f"Expected 2D image, got {image.shape}")
@@ -199,9 +200,13 @@ def detect_satellite(fits_path, visualize_flag=False, debug_flag=False, hw_bin_e
             satellite_distances.append(d)
 
 
+        if debug_flag:
+            print("Debugging")
+            print(f"circularity: {circularity}")
+            print(f"M00: {sat_area}")
+
     if debug_flag:
         print("Debugging")
-        print(f"circularity: {circularity}")
         cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
         cv2.resizeWindow("Input Image", 1000, 800)
         cv2.imshow("Input Image", image_np)
@@ -229,6 +234,9 @@ def detect_satellite(fits_path, visualize_flag=False, debug_flag=False, hw_bin_e
     satellite_distances = np.array(satellite_distances)
     satellite_scores = satellite_m00s / satellite_distances
     best_sat_idx = np.argmax(satellite_scores)
+    if debug_flag:
+        print("Debugging")
+        print(f"scores are: {satellite_scores}")
 
     best_centroid = satellite_centroids[best_sat_idx]
     #print(f"centroid-X: {best_centroid[0]}, centroid-y: {best_centroid[1]}")
@@ -239,7 +247,7 @@ def detect_satellite(fits_path, visualize_flag=False, debug_flag=False, hw_bin_e
 
     # ---- Visualization ----
     if visualize_flag:
-        print(f"Satellites data: m00={satellite_m00s[best_sat_idx]}, d={satellite_distances[best_sat_idx]}, center:{best_candidate[0]}, centroid: {best_centroid}")
+        print(f"Chosen satellite data: m00={satellite_m00s[best_sat_idx]}, d={satellite_distances[best_sat_idx]}, center:{best_candidate[0]}, centroid: {best_centroid}")
         cv2.namedWindow("Detected Star", cv2.WINDOW_NORMAL)
         cv2.resizeWindow("Detected Star", 1000, 800)
         cv2.circle(output_image, (int(best_candidate[0][0]), int(best_candidate[0][1])), int(best_candidate[1]), (0, 255, 0), 3)
@@ -313,7 +321,7 @@ def scan_entire_fits_folder(fits_folder_path):
         plt.show()
 
 
-def camera_to_altaz_projection(u, v, fx=0.424574272713/3600, fy=0.424574272713/3600, cx=3192/2, cy=2129/2, R=-64.7390513577836):
+def camera_to_altaz_projection(u, v, fx=0.424574272713/3600, fy=0.424574272713/3600, cx=3192/2, cy=2128/2, R=-64.7390513577836):
     """
     :param u: horizontal Pixel coordinate
     :type u: float
@@ -652,13 +660,20 @@ if __name__ == "__main__":
     # plt.tight_layout()
     # plt.show()
 
-    fits_to_png_with_center_cross_and_stretch(
-        r"tracking/2026Jan20__16_00__120/4/010-FracOfDay71997297.fits",
-        r"star_image_centered.png",
-        cross_size=40,
-        cross_thickness=3,
-        percentile_low=1,
-        percentile_high=99
-    )
+    # fits_to_png_with_center_cross_and_stretch(
+    #     r"tracking/2026Jan20__16_00__120/4/010-FracOfDay71997297.fits",
+    #     r"star_image_centered.png",
+    #     cross_size=40,
+    #     cross_thickness=3,
+    #     percentile_low=1,
+    #     percentile_high=99
+    # )
+
+    # example of centroid algorithm
+    # r"tracking/2026Jan20__16_00__120/4/010-FracOfDay71997297.fits"
+    #r"tracking/2026Jan19__15_55__130\1\HYB_COSMOS-2170/089-FracOfDay71974055.fits"
+    ex_img = r"tracking/2026Jan20__16_00__120\6/278-FracOfDay74413973.fits"
+    show_fits_image_and_header(ex_img)
+    detect_satellite(ex_img, True, True, True)
 
 

@@ -157,12 +157,12 @@ def reverse_delay_csv(csv_file, output_file, delay_minutes=10):
 
 
 if __name__ == "__main__":
-    eph_base_file = "ASATrackingData_STARLINK-1364.eph"
-    eph_base_file_wo_corr = "ASATrackingData_STARLINK-1364_wo_corr.eph"
-    delayed_eph_file = "ASATrackingData_STARLINK-1364_delayed.eph"
+    eph_base_file = "ASATrackingData_STARLINK-1364.eph" # eph generated using ground station observations with light time corrections
+    eph_base_file_wo_corr = "ASATrackingData_STARLINK-1364_wo_corr.eph" # eph generated using ground station obs without - || -
+    delayed_eph_file = "ASATrackingData_STARLINK-1364_delayed.eph" # manually delayed eph file, to drive same track again on OGS
     delayed_eph_file_wo_corr = "ASATrackingData_STARLINK-1364_wo_corr_delayed.eph"
 
-    # add delay of x minutes to epochs in eph_base_file, run only once
+    # add delay of x minutes to epochs in eph_base_file, run only once prior to actual tracking
     # delay_ephemeris(eph_base_file_wo_corr, delayed_eph_file_wo_corr, 3*60)
 
     tle_track_file = "trackingReport_STARLINK-1364.csv"
@@ -171,14 +171,24 @@ if __name__ == "__main__":
     eph_track_file_wo_corr_delayed = "trackingReport_STARLINK-1364_wo_corr_delayed.csv"
     eph_track_file_wo_corr_delay_reversed = "trackingReport_STARLINK-1364_wo_corr_delay_reversed.csv"
     ff_observation_track_wo_corr_file = "FFGroundObservations_STARLINK-1364_wo_corr_converted.csv"
+    ff_observation_track_w_rf_c_file = "FFGroundObservations_STARLINK-1364_w_rf_c_converted.csv"
 
-    # remove delay of x minutes from epochs in measured csv track file, run only once
+    # remove delay of x minutes from epochs in measured csv track file, run only once after track to generate csv
     # reverse_delay_csv(eph_track_file_wo_corr_delayed, eph_track_file_wo_corr_delay_reversed, 3*60)
 
     compare_tracking_to_ephemeris(
-        [tle_track_file, eph_track_file_delay_reversed, eph_track_file_wo_corr_delay_reversed, ff_observation_track_wo_corr_file],
+        [tle_track_file,
+         eph_track_file_delay_reversed,
+         eph_track_file_wo_corr_delay_reversed,
+         ff_observation_track_wo_corr_file,
+         ff_observation_track_w_rf_c_file],
         eph_base_file,
-        ["TLE based track", "Eph based track (w lt c)", "Eph based track (wo corr)", "FF obs wo corrs"]
+        ["TLE based track",
+         "Eph based track (w lt c)",
+         "Eph based track (wo corr)",
+         "FF obs wo corrs",
+         "FF obs w rf c"],
+        eph_label="FF obs w lt c"
     )
     #
     # # ---------- Compare tracking data ----------

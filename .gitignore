@@ -10,3 +10,4 @@ missionplans/*
 !missionplans/.gitkeep
 
 *.fits
+*.xlsx

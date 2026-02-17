@@ -2,8 +2,8 @@ import numpy as np
 from astropy import time
 
 # copy file to any location, insert file names here
-groundstation_observation_input_file = "FFGroundObservations_STARLINK-1364_wo_corr.txt"
-tracking_report_output_file = "FFGroundObservations_STARLINK-1364_wo_corr_converted.csv"
+groundstation_observation_input_file = "FFGroundObservations_STARLINK-1364_w_rf_c.txt"
+tracking_report_output_file = "FFGroundObservations_STARLINK-1364_w_rf_c_converted.csv"
 
 
 def convert_GO_to_TR(ground_obs_txt_file, tracking_rep_csv_file):
