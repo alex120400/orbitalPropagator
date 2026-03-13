@@ -1,0 +1,3 @@
+Ascending Sc was: TLE
+Switched at Epoch:
+61112.727760417

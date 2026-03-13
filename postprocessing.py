@@ -9,12 +9,12 @@ import matplotlib.pyplot as plt
 import cv2
 
 plt.rcParams.update({
-    "axes.titlesize": 16,
-    "axes.labelsize": 14,
-    "xtick.labelsize": 12,
-    "ytick.labelsize": 12,
-    "legend.fontsize": 12,
-    "figure.titlesize": 18
+    "axes.titlesize": 20,
+    "axes.labelsize": 18,
+    "xtick.labelsize": 16,
+    "ytick.labelsize": 16,
+    "legend.fontsize": 18,
+    "figure.titlesize": 20
 })
 
 
@@ -128,7 +128,11 @@ def fits_to_png_with_center_cross_and_stretch(
     cv2.imwrite(png_path, img_bgr)
 
 
-def detect_satellite(fits_path, visualize_flag=False, debug_flag=False, hw_bin_err_flag=True):
+def detect_satellite(fits_path,
+                     visualize_flag=False,
+                     debug_flag=False,
+                     hw_bin_err_flag=True,
+                     high_contrast_flag=False):
     # ---- Load FITS image ----
     image_np = fits.getdata(fits_path).astype(np.float32)
     err_bits = 8 # bit-size of white bar on the right
@@ -206,6 +210,39 @@ def detect_satellite(fits_path, visualize_flag=False, debug_flag=False, hw_bin_e
             print(f"M00: {sat_area}")
 
     if debug_flag:
+        if high_contrast_flag:
+            print("High contrast is on")
+            # Estimate background (robust for noisy images)
+            background = np.median(image_np)
+
+            # Subtract background
+            x = image_np - background
+
+            # Remove negative values
+            x[x < 0] = 0
+
+            # Use high percentile for stars only
+            vmax = np.percentile(x, 99.9)
+
+            if vmax <= 0:
+                stretched = np.zeros_like(x, dtype=np.uint8)
+            else:
+                # Normalize
+                x = np.clip(x, 0, vmax)
+                x = x / vmax
+
+                # Strong asinh stretch
+                a = 30
+                x = np.arcsinh(a * x) / np.arcsinh(a)
+
+                stretched = (x * 255).astype(np.uint8)
+
+            # --- Convert to BGR for OpenCV ---
+            smooth_frame = cv2.GaussianBlur(stretched, (5, 5), 0)
+            output_image = cv2.cvtColor(smooth_frame, cv2.COLOR_GRAY2BGR)
+            image_np = cv2.cvtColor(stretched, cv2.COLOR_GRAY2BGR) # filtered for better contrast
+            binary = 255 - binary # inverted
+
         print("Debugging")
         cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
         cv2.resizeWindow("Input Image", 1000, 800)
@@ -500,11 +537,11 @@ def plot_single_measurement(base_dir, folders, labels, title_suffix):
     )
 
     ax.set_xticks(group_centers)
-    ax.set_xticklabels(labels, rotation=40)
+    ax.set_xticklabels(labels, rotation=35)
 
     ax.set_ylabel("Offsets [arcsec]")
     ax.set_xlabel("Tracking Sets")
-    ax.set_title(f"OD vs TLE Tracking Offset Comparison\n{title_suffix}")
+    # ax.set_title(f"OD vs TLE Tracking Offset Comparison\n{title_suffix}")
     ax.grid(axis="y", linestyle="--", alpha=0.7)
 
     ax.plot([], [], color="lightblue", label="OD")
@@ -584,25 +621,25 @@ if __name__ == "__main__":
             "base_dir": "2026Jan19__15_55__130",
             "folders": ["1", "2", "3", "4"],
             "labels": [
-                "COSMOS-2170\nAscending Track: OD\nHeight: 1409 km\nMax El.: 31°",
-                "ONEWEB-0715\nAscending Track: TLE\nHeight: 1214 km\nMax El.: 38°",
-                "ONEWEB-0098\nAscending Track: OD\nHeight: 1214 km\nMax El.: 42°",
-                "DELTA-1-DEB\nAscending Track: OD\nHeight: 1605 km\nMax El.: 44°"
+                "COSMOS-2170\nHeight: 1409 km\nMax El.: 31°", # "COSMOS-2170\nAscending Track: OD\nHeight: 1409 km\nMax El.: 31°",
+                "ONEWEB-0715\nHeight: 1214 km\nMax El.: 38°", # "ONEWEB-0715\nAscending Track: TLE\nHeight: 1214 km\nMax El.: 38°",
+                "ONEWEB-0098\nHeight: 1214 km\nMax El.: 42°", # "ONEWEB-0098\nAscending Track: OD\nHeight: 1214 km\nMax El.: 42°",
+                "DELTA-1-DEB\nHeight: 1605 km\nMax El.: 44°" # "DELTA-1-DEB\nAscending Track: OD\nHeight: 1605 km\nMax El.: 44°"
             ],
-            "title": "Measurement 1\nJan. 19. 16:00 - 18:00 UTC"
+            "title": "Measurement 1 on Jan. 19. 16:00 - 18:00 UTC"
         },
         {
             "base_dir": "2026Jan20__16_00__120",
             "folders": ["1", "2", "3", "4", "5", "6"],
             "labels": [
-                "COSMOS-2170 (21784)\nAscending Track: OD\nHeight: 1409 km\nMax El.: 67°",
-                "DELTA-1-DEB (12217U)\nAscending Track: TLE\nHeight: 809 km\nMax El.: 40°",
-                "SL-8 R/B (13034U)\nAscending Track: OD\nHeight: 977 km\nMax El.: 52°",
-                "KITSAT 3 (25756U)\nAscending Track: TLE\nHeight: 704 km\nMax El.: 56°",
-                "ONEWEB-0399 (50479U)\nAscending Track: TLE\nHeight: 1215 km\nMax El.: 40°",
-                "NOAA 6 (11416U)\nAscending Track: TLE\nHeight: 771 km\nMax El.: 77°"
+                "COSMOS-2170\nHeight: 1409 km\nMax El.: 67°", # "COSMOS-2170 (21784)\nAscending Track: OD\nHeight: 1409 km\nMax El.: 67°",
+                "DELTA-1-DEB\nHeight: 809 km\nMax El.: 40°", # "DELTA-1-DEB (12217U)\nAscending Track: TLE\nHeight: 809 km\nMax El.: 40°",
+                "SL-8 R/B\nHeight: 977 km\nMax El.: 52°", # "SL-8 R/B (13034U)\nAscending Track: OD\nHeight: 977 km\nMax El.: 52°",
+                "KITSAT 3\nHeight: 704 km\nMax El.: 56°", # "KITSAT 3 (25756U)\nAscending Track: TLE\nHeight: 704 km\nMax El.: 56°",
+                "ONEWEB-0399\nHeight: 1215 km\nMax El.: 40°", # "ONEWEB-0399 (50479U)\nAscending Track: TLE\nHeight: 1215 km\nMax El.: 40°",
+                "NOAA 6\nHeight: 771 km\nMax El.: 77°" # "NOAA 6 (11416U)\nAscending Track: TLE\nHeight: 771 km\nMax El.: 77°"
             ],
-            "title": "Measurement 2\nJan. 20. 16:00 - 18:00 UTC"
+            "title": "Measurement 2 on Jan. 20. 16:00 - 18:00 UTC"
         }
     ]
 
@@ -610,55 +647,55 @@ if __name__ == "__main__":
     merged_tle = []
     measurement_labels = []
 
-    # for m in measurements:
-    #     od_all, tle_all = plot_single_measurement(
-    #         m["base_dir"],
-    #         m["folders"],
-    #         m["labels"],
-    #         m["title"]
-    #     )
-    #
-    #     merged_od.append(od_all)
-    #     merged_tle.append(tle_all)
-    #     measurement_labels.append(m["title"])
-    #
-    # fig, ax = plt.subplots(figsize=(9, 6))
-    #
-    # group_centers = np.arange(len(merged_od)) * 2 + 1
-    # offset = 0.3
-    #
-    # ax.boxplot(
-    #     merged_od,
-    #     positions=group_centers - offset,
-    #     widths=0.4,
-    #     patch_artist=True,
-    #     boxprops=dict(facecolor="lightblue"),
-    #     showfliers=False
-    # )
-    #
-    # ax.boxplot(
-    #     merged_tle,
-    #     positions=group_centers + offset,
-    #     widths=0.4,
-    #     patch_artist=True,
-    #     boxprops=dict(facecolor="orange"),
-    #     showfliers=False
-    # )
-    #
-    # ax.set_xticks(group_centers)
-    # ax.set_xticklabels(measurement_labels)
-    #
-    # ax.set_ylabel("Offsets [arcsec]")
-    # ax.set_xlabel("Measurements (time progression)")
-    # ax.set_title("Time Evolution of Tracking Offsets (Merged per Measurement)")
-    # ax.grid(axis="y", linestyle="--", alpha=0.7)
-    #
-    # ax.plot([], [], color="lightblue", label="OD")
-    # ax.plot([], [], color="orange", label="TLE")
-    # ax.legend()
-    #
-    # plt.tight_layout()
-    # plt.show()
+    for m in measurements:
+        od_all, tle_all = plot_single_measurement(
+            m["base_dir"],
+            m["folders"],
+            m["labels"],
+            m["title"]
+        )
+
+        merged_od.append(od_all)
+        merged_tle.append(tle_all)
+        measurement_labels.append(m["title"].replace("on", "\n"))
+
+    fig, ax = plt.subplots(figsize=(9, 5))
+
+    group_centers = np.arange(len(merged_od)) * 2 + 1
+    offset = 0.3
+
+    ax.boxplot(
+        merged_od,
+        positions=group_centers - offset,
+        widths=0.4,
+        patch_artist=True,
+        boxprops=dict(facecolor="lightblue"),
+        showfliers=False
+    )
+
+    ax.boxplot(
+        merged_tle,
+        positions=group_centers + offset,
+        widths=0.4,
+        patch_artist=True,
+        boxprops=dict(facecolor="orange"),
+        showfliers=False
+    )
+
+    ax.set_xticks(group_centers)
+    ax.set_xticklabels(measurement_labels)
+
+    ax.set_ylabel("Offsets [arcsec]")
+    ax.set_xlabel("Measurements (time progression)")
+    # ax.set_title("Merged Tracking Results")
+    ax.grid(axis="y", linestyle="--", alpha=0.7)
+
+    ax.plot([], [], color="lightblue", label="OD")
+    ax.plot([], [], color="orange", label="TLE")
+    ax.legend()
+
+    plt.tight_layout()
+    plt.show()
 
     # fits_to_png_with_center_cross_and_stretch(
     #     r"tracking/2026Jan20__16_00__120/4/010-FracOfDay71997297.fits",
@@ -671,9 +708,10 @@ if __name__ == "__main__":
 
     # example of centroid algorithm
     # r"tracking/2026Jan20__16_00__120/4/010-FracOfDay71997297.fits"
-    #r"tracking/2026Jan19__15_55__130\1\HYB_COSMOS-2170/089-FracOfDay71974055.fits"
-    ex_img = r"tracking/2026Jan20__16_00__120\6/278-FracOfDay74413973.fits"
-    show_fits_image_and_header(ex_img)
-    detect_satellite(ex_img, True, True, True)
+    # r"tracking/2026Jan19__15_55__130\1\HYB_COSMOS-2170/089-FracOfDay71974055.fits"
+    # r"tracking/2026Jan20__16_00__120\6/278-FracOfDay74413973.fits"
+    # ex_img = r"tracking/2026Jan19__15_55__130\1\HYB_COSMOS-2170/089-FracOfDay71974055.fits"
+    # show_fits_image_and_header(ex_img)
+    # detect_satellite(ex_img, True, True, True, True)
 
 
