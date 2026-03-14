@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<FreeFlyerProjectFile xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" timePrecisionMode="nanosecond" schemaVersion="7.10.0.5">
+  <ProjectInformation>
+    <Author />
+    <Source />
+    <FreeFlyerVersion>7.10.0.43083514</FreeFlyerVersion>
+    <RevisionNumber />
+    <Title />
+    <Subject />
+    <Category />
+    <Keywords />
+    <Comments />
+    <Notes />
+  </ProjectInformation>
+  <ProjectPreferences>
+    <General>
+      <LockProjectFromEditing>false</LockProjectFromEditing>
+    </General>
+    <OnOpen>
+      <ShowControlSequence>true</ShowControlSequence>
+      <ShowEmptyEnvironment>false</ShowEmptyEnvironment>
+      <ShowNotes>false</ShowNotes>
+      <ShowHome>false</ShowHome>
+      <ShowOutput>false</ShowOutput>
+      <CreateBackup>false</CreateBackup>
+      <BackupLocation></BackupLocation>
+    </OnOpen>
+    <OnRun>
+      <SaveMissionPlan>false</SaveMissionPlan>
+      <HideWarningMessages>false</HideWarningMessages>
+    </OnRun>
+  </ProjectPreferences>
+  <ProjectDataFiles>
+    <EarthOrientationFile useDefault="true"></EarthOrientationFile>
+    <ElectronDensityCoefficientFile useDefault="true"></ElectronDensityCoefficientFile>
+    <GeopotentialFile useDefault="true"></GeopotentialFile>
+    <HarrisPriesterDragFile useDefault="true"></HarrisPriesterDragFile>
+    <JacchiaAtmosphereModelFile useDefault="true"></JacchiaAtmosphereModelFile>
+    <MagneticFieldFile useDefault="true"></MagneticFieldFile>
+    <PlanetaryFile useDefault="true"></PlanetaryFile>
+    <StationGeodeticsFile useDefault="true"></StationGeodeticsFile>
+    <SolidTideFile useDefault="true"></SolidTideFile>
+    <DSTFile useDefault="true"></DSTFile>
+    <StarFieldFile useDefault="true"></StarFieldFile>
+  </ProjectDataFiles>
+  <ProjectObjects>
+    <Object>
+      <SolarSystem name="FF_SolarSystem" isConstant="false" isGlobal="true">
+        <Name>FF_SolarSystem</Name>
+        <EarthOrientationModel>1</EarthOrientationModel>
+        <CIRFEvaluationMode>1</CIRFEvaluationMode>
+        <ComputePolarMotion>true</ComputePolarMotion>
+        <ModelCelestialPoleOffsets>true</ModelCelestialPoleOffsets>
+        <ApplyUT1Correction>true</ApplyUT1Correction>
+        <COUpdateInterval units="s" displayed_units="s">0</COUpdateInterval>
+        <IonosphereOptions>
+          <IonosphereOptions name="FF_SolarSystem_|ionoOptions|" isConstant="false" isGlobal="true">
+            <Name>FF_SolarSystem_|ionoOptions|</Name>
+            <MaximumHeight units="km" displayed_units="km">1000</MaximumHeight>
+            <MinimumHeight units="km" displayed_units="km">80</MinimumHeight>
+            <IntegrationStepSize units="km" displayed_units="km">25</IntegrationStepSize>
+            <ScaleFactor units="" displayed_units="">1</ScaleFactor>
+            <Model>0</Model>
+            <IRIDataDirectory>DEFAULT</IRIDataDirectory>
+            <metadata dim="0" />
+          </IonosphereOptions>
+        </IonosphereOptions>
+        <NoradKeplerEqTolerance units="" displayed_units="">1e-12</NoradKeplerEqTolerance>
+        <metadata dim="0" />
+      </SolarSystem>
+    </Object>
+    <Object>
+      <ConsoleWindow name="Console" isConstant="false" isGlobal="true">
+        <Name>Console</Name>
+        <WindowTitle>Console</WindowTitle>
+        <WordWrap>false</WordWrap>
+        <CurrentTextColor>0</CurrentTextColor>
+        <BackColor>16777215</BackColor>
+        <Dimension units="" displayed_units="">10</Dimension>
+        <DockMode>1</DockMode>
+        <CurrentFontType>0</CurrentFontType>
+        <UseStdOut>false</UseStdOut>
+        <ShowOnRun>false</ShowOnRun>
+        <metadata dim="0" />
+      </ConsoleWindow>
+    </Object>
+  </ProjectObjects>
+  <ProjectMissionSequence>
+    <ProjectExternals />
+    <ProjectCommands>
+      <FreeForm enabled="true">
+        <Label>FreeForm</Label>
+        <Bookmarks />
+        <Breakpoints />
+        <FreeFormScript><![CDATA[// Reimport and Propagate Ephemeris
+
+// Create core objects
+Array      stateInEarthFixedFrame[3];
+Ephemeris  interpolatedEphem;
+Spacecraft spacecraft2;
+Array      stateICRF[3];
+
+// Set the step size to 2 minutes to force interpolation between Ephemeris vectors
+spacecraft2.Propagator.StepSize = TimeSpan.FromSeconds(60);
+
+// Load the ephemeris file 
+interpolatedEphem.LoadEphemeris("test.FFEphem");
+spacecraft2.Epoch = interpolatedEphem.StartEpoch;
+Report spacecraft2.PropagatorType;
+
+// Create and configure DataTableWindow object so we can give them meaningful names
+DataTableWindow interpolatedReport({spacecraft2.EpochText, spacecraft2.Position, spacecraft2.Velocity});
+interpolatedReport.WindowTitle = "Interpolated Spacecraft Data (From Ephemeris)";
+
+While (spacecraft2.Epoch <= interpolatedEphem.EndEpoch);	 
+	// Pull the state vector data out of the ephemeris object (in the Earth-Fixed frame)
+	stateInEarthFixedFrame = interpolatedEphem.GetInterpolatedVectorData(spacecraft2.Epoch, {0,1,2}); 
+
+	// Convert the Spacecraft's state from the Earth-Fixed frame at the spacecraft's epoch to ICRF 
+	stateICRF = PositionConvert(4, 1, spacecraft2.Epoch, stateInEarthFixedFrame); 
+
+	// Assign the ICRF state to the Spacecraft object 
+	spacecraft2.Position = stateICRF;
+
+	// Update output
+	//spacecraft2PosSeries.AddPoints(spacecraft2.ElapsedTime.ToHours, spacecraft2.Position.Norm());
+	//Update plotWindowPosition;
+	Update interpolatedReport;
+
+	Step spacecraft2;
+End;]]></FreeFormScript>
+      </FreeForm>
+    </ProjectCommands>
+  </ProjectMissionSequence>
+  <ProjectScript><![CDATA[// Reimport and Propagate Ephemeris
+
+// Create core objects
+Array      stateInEarthFixedFrame[3];
+Ephemeris  interpolatedEphem;
+Spacecraft spacecraft2;
+Array      stateICRF[3];
+
+// Set the step size to 2 minutes to force interpolation between Ephemeris vectors
+spacecraft2.Propagator.StepSize = TimeSpan.FromSeconds(60);
+
+// Load the ephemeris file 
+interpolatedEphem.LoadEphemeris("test.FFEphem");
+spacecraft2.Epoch = interpolatedEphem.StartEpoch;
+Report spacecraft2.PropagatorType;
+
+// Create and configure DataTableWindow object so we can give them meaningful names
+DataTableWindow interpolatedReport({spacecraft2.EpochText, spacecraft2.Position, spacecraft2.Velocity});
+interpolatedReport.WindowTitle = "Interpolated Spacecraft Data (From Ephemeris)";
+
+While (spacecraft2.Epoch <= interpolatedEphem.EndEpoch);	 
+	// Pull the state vector data out of the ephemeris object (in the Earth-Fixed frame)
+	stateInEarthFixedFrame = interpolatedEphem.GetInterpolatedVectorData(spacecraft2.Epoch, {0,1,2}); 
+
+	// Convert the Spacecraft's state from the Earth-Fixed frame at the spacecraft's epoch to ICRF 
+	stateICRF = PositionConvert(4, 1, spacecraft2.Epoch, stateInEarthFixedFrame); 
+
+	// Assign the ICRF state to the Spacecraft object 
+	spacecraft2.Position = stateICRF;
+
+	// Update output
+	//spacecraft2PosSeries.AddPoints(spacecraft2.ElapsedTime.ToHours, spacecraft2.Position.Norm());
+	//Update plotWindowPosition;
+	Update interpolatedReport;
+
+	Step spacecraft2;
+End;]]></ProjectScript>
+  <ProjectNotes></ProjectNotes>
+</FreeFlyerProjectFile>

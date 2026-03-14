@@ -1,0 +1,503 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<FreeFlyerProjectFile xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" timePrecisionMode="nanosecond" schemaVersion="7.10.0.5">
+  <ProjectInformation>
+    <Author />
+    <Source />
+    <FreeFlyerVersion>7.10.0.43083514</FreeFlyerVersion>
+    <RevisionNumber />
+    <Title />
+    <Subject />
+    <Category />
+    <Keywords />
+    <Comments />
+    <Notes />
+  </ProjectInformation>
+  <ProjectPreferences>
+    <General>
+      <LockProjectFromEditing>false</LockProjectFromEditing>
+    </General>
+    <OnOpen>
+      <ShowControlSequence>true</ShowControlSequence>
+      <ShowEmptyEnvironment>false</ShowEmptyEnvironment>
+      <ShowNotes>false</ShowNotes>
+      <ShowHome>false</ShowHome>
+      <ShowOutput>false</ShowOutput>
+      <CreateBackup>false</CreateBackup>
+      <BackupLocation></BackupLocation>
+    </OnOpen>
+    <OnRun>
+      <SaveMissionPlan>false</SaveMissionPlan>
+      <HideWarningMessages>false</HideWarningMessages>
+    </OnRun>
+  </ProjectPreferences>
+  <ProjectDataFiles>
+    <EarthOrientationFile useDefault="true"></EarthOrientationFile>
+    <ElectronDensityCoefficientFile useDefault="true"></ElectronDensityCoefficientFile>
+    <GeopotentialFile useDefault="true"></GeopotentialFile>
+    <HarrisPriesterDragFile useDefault="true"></HarrisPriesterDragFile>
+    <JacchiaAtmosphereModelFile useDefault="true"></JacchiaAtmosphereModelFile>
+    <MagneticFieldFile useDefault="true"></MagneticFieldFile>
+    <PlanetaryFile useDefault="true"></PlanetaryFile>
+    <StationGeodeticsFile useDefault="true"></StationGeodeticsFile>
+    <SolidTideFile useDefault="true"></SolidTideFile>
+    <DSTFile useDefault="true"></DSTFile>
+    <StarFieldFile useDefault="true"></StarFieldFile>
+  </ProjectDataFiles>
+  <ProjectObjects>
+    <Object>
+      <SolarSystem name="FF_SolarSystem" isConstant="false" isGlobal="true">
+        <Name>FF_SolarSystem</Name>
+        <EarthOrientationModel>1</EarthOrientationModel>
+        <CIRFEvaluationMode>1</CIRFEvaluationMode>
+        <ComputePolarMotion>true</ComputePolarMotion>
+        <ModelCelestialPoleOffsets>true</ModelCelestialPoleOffsets>
+        <ApplyUT1Correction>true</ApplyUT1Correction>
+        <COUpdateInterval units="s" displayed_units="s">0</COUpdateInterval>
+        <IonosphereOptions>
+          <IonosphereOptions name="FF_SolarSystem_|ionoOptions|" isConstant="false" isGlobal="true">
+            <Name>FF_SolarSystem_|ionoOptions|</Name>
+            <MaximumHeight units="km" displayed_units="km">1000</MaximumHeight>
+            <MinimumHeight units="km" displayed_units="km">80</MinimumHeight>
+            <IntegrationStepSize units="km" displayed_units="km">25</IntegrationStepSize>
+            <ScaleFactor units="" displayed_units="">1</ScaleFactor>
+            <Model>0</Model>
+            <IRIDataDirectory>DEFAULT</IRIDataDirectory>
+            <metadata dim="0" />
+          </IonosphereOptions>
+        </IonosphereOptions>
+        <NoradKeplerEqTolerance units="" displayed_units="">1e-12</NoradKeplerEqTolerance>
+        <metadata dim="0" />
+      </SolarSystem>
+    </Object>
+    <Object>
+      <ConsoleWindow name="Console" isConstant="false" isGlobal="true">
+        <Name>Console</Name>
+        <WindowTitle>Console</WindowTitle>
+        <WordWrap>false</WordWrap>
+        <CurrentTextColor>0</CurrentTextColor>
+        <BackColor>16777215</BackColor>
+        <Dimension units="" displayed_units="">10</Dimension>
+        <DockMode>1</DockMode>
+        <CurrentFontType>0</CurrentFontType>
+        <UseStdOut>false</UseStdOut>
+        <ShowOnRun>false</ShowOnRun>
+        <metadata dim="0" />
+      </ConsoleWindow>
+    </Object>
+    <Object>
+      <Variable name="j" isConstant="false" isGlobal="false">
+        <Name>j</Name>
+        <Value units="" displayed_units="">0</Value>
+        <metadata dim="0" />
+      </Variable>
+    </Object>
+  </ProjectObjects>
+  <ProjectMissionSequence>
+    <ProjectExternals />
+    <ProjectCommands>
+      <FreeForm enabled="true">
+        <Label>Define Input File and EPhemeris structure</Label>
+        <Bookmarks />
+        <Breakpoints />
+        <FreeFormScript><![CDATA[// define 
+FF_SolarSystem.DefaultEarthOrientationParametersFile = "../Support_Files/earth_orientation_parameters_celestrak.csv";
+
+// Put your cpf input file here
+String cpf_input_file; //= "./tmp/starlette.cpf";
+String ffEphem_output_file; //= "./tmp/starlette.FFEphem";
+
+
+
+// ephemeris definition, using custom columns as velocity data is not available in cpf files
+// Configure and Populate Ephemeris
+
+// Create core objects
+EphemerisVector ephVector;
+Ephemeris       convertedEphem;
+
+
+// Set up the Ephemeris object that we'll be generating
+// The '1' indicates that an 8th order Lagrange interpolater will be used
+convertedEphem.CentralBody = "Earth";
+convertedEphem.WritePosVel = 0;
+convertedEphem.FFEphemProperties.FormatVersion = 3; 
+convertedEphem.FFEphemProperties.AddColumn("X", 1);  
+convertedEphem.FFEphemProperties.AddColumn("Y", 1); 
+convertedEphem.FFEphemProperties.AddColumn("Z", 1);
+
+// Initialize the EphemerisVector object based on the Ephemeris
+ephVector.InitializeColumns(convertedEphem);
+
+]]></FreeFormScript>
+      </FreeForm>
+      <FreeForm enabled="true">
+        <Label>Define Variables</Label>
+        <Bookmarks />
+        <Breakpoints />
+        <FreeFormScript><![CDATA[// IO variables
+StringArray fileContents[0];
+StringArray lineContents[0];
+Variable numLines;
+Variable i = 0;
+Variable epoch_utc_mjd;
+TimeSpan ts_epoch_utc_mjd;
+TimeSpan ts_epoch_tai_mjd_gsfc;
+Variable pos_x;
+Variable pos_y;
+Variable pos_z;
+Array stateInEarthFixedFrame[3];
+Array stateICRF[3];
+Variable ICRF_flag = 1; // if set, the output ephemeris is already converted to ICRF]]></FreeFormScript>
+      </FreeForm>
+      <FreeForm enabled="false" comment="single cpf conversion">
+        <Label>Read though cpf and fill ephem</Label>
+        <Bookmarks />
+        <Breakpoints />
+        <FreeFormScript><![CDATA[// Put your cpf input file here
+String cpf_input_file; //= "./tmp/starlette.cpf";
+String ffEphem_output_file; //= "./tmp/starlette.FFEphem";
+
+
+//Read the contents of the entire file and place each line into an element of "fileContents", process the an write them back to the ephemeris
+numLines = fileContents.ReadFromFile(cpf_input_file);
+ 
+ // iterate through lines
+While (i < numLines);
+    //Split each line into entries, using spaces as the delimiter
+    fileContents[i].Split(" ",lineContents);
+
+    //Ignore header lines of the file (Headers) and report so far only the position
+    If (lineContents[0] == "10"); // position data
+    	// extract data from cpf file
+        epoch_utc_mjd = StringToFloat(lineContents[2]) + StringToFloat(lineContents[3])/(60*60*24);
+    	ts_epoch_utc_mjd = TimeSpan.FromDays(epoch_utc_mjd);
+    	pos_x = StringToFloat(lineContents[5]) / 1000; // m to km
+    	pos_y = StringToFloat(lineContents[6]) / 1000; // m to km
+    	pos_z = StringToFloat(lineContents[7]) / 1000; // m to km
+    	stateInEarthFixedFrame = {pos_x, pos_y, pos_z};
+    	
+    	// convert data to correct epoch format and position reference frame
+    	ts_epoch_tai_mjd_gsfc = TimeTools.ConvertTime(ts_epoch_utc_mjd, "UTC", "MJD USNO", "TAI", "MJD GSFC");
+    	stateICRF = PositionConvert(4, 1, ts_epoch_tai_mjd_gsfc, stateInEarthFixedFrame);
+    	
+		// Add the current state into the EphemerisVector object
+    	ephVector.Epoch = ts_epoch_tai_mjd_gsfc;
+    	If (ICRF_flag == 1);
+    		ephVector.SetVariableValues({0,1,2}, stateICRF);
+    	Else;
+			ephVector.SetVariableValues({0,1,2}, {pos_x, pos_y, pos_z});
+    	End;
+    	
+    	// Add the EphemerisVector to the Ephemeris 
+		convertedEphem.AddVectorData(ephVector);
+    End;
+    i++;
+End;
+
+Put convertedEphem to FFephem ffEphem_output_file;]]></FreeFormScript>
+      </FreeForm>
+      <ForCommand enabled="true" collapsed="false" StartLineComment="convert entire list of files">
+        <For name="Command4" isConstant="false" isGlobal="false">
+          <Name>Command4</Name>
+          <Variable>
+            <ObjectHolder name="Command4_:Variable" isConstant="false" isGlobal="false">
+              <Name>Command4_:Variable</Name>
+              <BaseObject>j</BaseObject>
+              <metadata dim="0" />
+            </ObjectHolder>
+          </Variable>
+          <InitialValue>
+            <DoubleConstant name="Command4_:InitialValue" isConstant="false" isGlobal="false">
+              <Name>Command4_:InitialValue</Name>
+              <value units="" displayed_units="">0</value>
+              <metadata dim="0" />
+            </DoubleConstant>
+          </InitialValue>
+          <MaximumValue>
+            <DoubleConstant name="Command4_:MaximumValue" isConstant="false" isGlobal="false">
+              <Name>Command4_:MaximumValue</Name>
+              <value units="" displayed_units="">7</value>
+              <metadata dim="0" />
+            </DoubleConstant>
+          </MaximumValue>
+          <Increment>
+            <DoubleConstant name="Command4_:Increment" isConstant="false" isGlobal="false">
+              <Name>Command4_:Increment</Name>
+              <value units="" displayed_units="">1</value>
+              <metadata dim="0" />
+            </DoubleConstant>
+          </Increment>
+          <metadata dim="0" />
+        </For>
+        <FreeForm enabled="true">
+          <Label>Read though cpf and fill ephem</Label>
+          <Bookmarks />
+          <Breakpoints />
+          <FreeFormScript><![CDATA[// need other loop going j=0..7
+If (j == 0);
+// ######## STELLA ########
+cpf_input_file = "./cpf/stella.cpf";
+ffEphem_output_file = "./ephemeris/stella.FFEphem";
+convertedEphem.FFEphemProperties.SpacecraftName = "STELLA";
+ElseIf (j == 1);
+// ######## STARLETTE ########
+cpf_input_file = "./cpf/starlette.cpf";
+ffEphem_output_file = "./ephemeris/starlette.FFEphem";
+convertedEphem.FFEphemProperties.SpacecraftName = "STARLETTE";
+ElseIf (j == 2);
+// ######## LAGEOS 1 ########
+cpf_input_file = "./cpf/lageos-1.cpf";
+ffEphem_output_file = "./ephemeris/lageos-1.FFEphem";
+convertedEphem.FFEphemProperties.SpacecraftName = "LAGEOS 1";
+ElseIf (j == 3);
+// ######## LARETS ########
+cpf_input_file = "./cpf/larets.cpf";
+ffEphem_output_file = "./ephemeris/larets.FFEphem";
+convertedEphem.FFEphemProperties.SpacecraftName = "LARETS";
+ElseIf (j == 4);
+// ######## LARES ########
+cpf_input_file = "./cpf/lares.cpf";
+ffEphem_output_file = "./ephemeris/lares.FFEphem";
+convertedEphem.FFEphemProperties.SpacecraftName = "LARES";
+ElseIf (j == 5);
+// ######## AJISAI (EGS) ########
+cpf_input_file = "./cpf/ajisai-(EGS).cpf";
+ffEphem_output_file = "./ephemeris/ajisai-(EGS).FFEphem";
+convertedEphem.FFEphemProperties.SpacecraftName = "AJISAI (EGS)";
+ElseIf (j == 6);
+// ######## COSMOS 1989 (ETALON 1) ########
+cpf_input_file = "./cpf/cosmos-1989-(etalon-1).cpf";
+ffEphem_output_file = "./ephemeris/cosmos-1989-(etalon-1).FFEphem";
+convertedEphem.FFEphemProperties.SpacecraftName = "COSMOS 1989 (ETALON 1)";
+Else;
+// ######## COSMOS 2024 (ETALON 2) ########
+cpf_input_file = "./cpf/cosmos-2024-(etalon-2).cpf";
+ffEphem_output_file = "./ephemeris/cosmos-2024-(etalon-2).FFEphem";
+convertedEphem.FFEphemProperties.SpacecraftName = "COSMOS 2024 (ETALON 2)";
+End;
+
+//Read the contents of the entire file and place each line into an element of "fileContents", process the an write them back to the ephemeris
+numLines = fileContents.ReadFromFile(cpf_input_file);
+
+// iterate through all the lines
+While (i < numLines);
+
+    //Split each line into entries, using spaces as the delimiter
+    fileContents[i].Split(" ",lineContents);
+
+    //Ignore header lines of the file (Headers) and report so far only the position
+    If (lineContents[0] == "10"); // position data
+    	// extract data from cpf file
+        epoch_utc_mjd = StringToFloat(lineContents[2]) + StringToFloat(lineContents[3])/(60*60*24);
+    	ts_epoch_utc_mjd = TimeSpan.FromDays(epoch_utc_mjd);
+    	pos_x = StringToFloat(lineContents[5]) / 1000; // m to km
+    	pos_y = StringToFloat(lineContents[6]) / 1000; // m to km
+    	pos_z = StringToFloat(lineContents[7]) / 1000; // m to km
+    	stateInEarthFixedFrame = {pos_x, pos_y, pos_z};
+    	
+    	// convert data to correct epoch format and position reference frame
+    	ts_epoch_tai_mjd_gsfc = TimeTools.ConvertTime(ts_epoch_utc_mjd, "UTC", "MJD USNO", "TAI", "MJD GSFC");
+    	stateICRF = PositionConvert(4, 1, ts_epoch_tai_mjd_gsfc, stateInEarthFixedFrame);
+    	
+		// Add the current state into the EphemerisVector object
+    	ephVector.Epoch = ts_epoch_tai_mjd_gsfc;
+    	If (ICRF_flag == 1);
+    		ephVector.SetVariableValues({0,1,2}, stateICRF);
+    	Else;
+			ephVector.SetVariableValues({0,1,2}, {pos_x, pos_y, pos_z});
+    	End;
+    	
+    	// Add the EphemerisVector to the Ephemeris 
+		convertedEphem.AddVectorData(ephVector);
+    End;
+
+    i++;
+
+End;
+
+Put convertedEphem to FFephem ffEphem_output_file;
+
+// reset for next ephemeris
+i = 0;
+convertedEphem.ClearEphemeris();]]></FreeFormScript>
+        </FreeForm>
+      </ForCommand>
+    </ProjectCommands>
+  </ProjectMissionSequence>
+  <ProjectScript><![CDATA[// define 
+FF_SolarSystem.DefaultEarthOrientationParametersFile = "../Support_Files/earth_orientation_parameters_celestrak.csv";
+
+// Put your cpf input file here
+String cpf_input_file; //= "./tmp/starlette.cpf";
+String ffEphem_output_file; //= "./tmp/starlette.FFEphem";
+
+
+
+// ephemeris definition, using custom columns as velocity data is not available in cpf files
+// Configure and Populate Ephemeris
+
+// Create core objects
+EphemerisVector ephVector;
+Ephemeris       convertedEphem;
+
+
+// Set up the Ephemeris object that we'll be generating
+// The '1' indicates that an 8th order Lagrange interpolater will be used
+convertedEphem.CentralBody = "Earth";
+convertedEphem.WritePosVel = 0;
+convertedEphem.FFEphemProperties.FormatVersion = 3; 
+convertedEphem.FFEphemProperties.AddColumn("X", 1);  
+convertedEphem.FFEphemProperties.AddColumn("Y", 1); 
+convertedEphem.FFEphemProperties.AddColumn("Z", 1);
+
+// Initialize the EphemerisVector object based on the Ephemeris
+ephVector.InitializeColumns(convertedEphem);
+
+
+// IO variables
+StringArray fileContents[0];
+StringArray lineContents[0];
+Variable numLines;
+Variable i = 0;
+Variable epoch_utc_mjd;
+TimeSpan ts_epoch_utc_mjd;
+TimeSpan ts_epoch_tai_mjd_gsfc;
+Variable pos_x;
+Variable pos_y;
+Variable pos_z;
+Array stateInEarthFixedFrame[3];
+Array stateICRF[3];
+Variable ICRF_flag = 1; // if set, the output ephemeris is already converted to ICRF
+// // Put your cpf input file here
+// String cpf_input_file; //= "./tmp/starlette.cpf";
+// String ffEphem_output_file; //= "./tmp/starlette.FFEphem";
+// 
+// 
+// //Read the contents of the entire file and place each line into an element of "fileContents", process the an write them back to the ephemeris
+// numLines = fileContents.ReadFromFile(cpf_input_file);
+//  
+//  // iterate through lines
+// While (i < numLines);
+//     //Split each line into entries, using spaces as the delimiter
+//     fileContents[i].Split(" ",lineContents);
+// 
+//     //Ignore header lines of the file (Headers) and report so far only the position
+//     If (lineContents[0] == "10"); // position data
+//     	// extract data from cpf file
+//         epoch_utc_mjd = StringToFloat(lineContents[2]) + StringToFloat(lineContents[3])/(60*60*24);
+//     	ts_epoch_utc_mjd = TimeSpan.FromDays(epoch_utc_mjd);
+//     	pos_x = StringToFloat(lineContents[5]) / 1000; // m to km
+//     	pos_y = StringToFloat(lineContents[6]) / 1000; // m to km
+//     	pos_z = StringToFloat(lineContents[7]) / 1000; // m to km
+//     	stateInEarthFixedFrame = {pos_x, pos_y, pos_z};
+//     	
+//     	// convert data to correct epoch format and position reference frame
+//     	ts_epoch_tai_mjd_gsfc = TimeTools.ConvertTime(ts_epoch_utc_mjd, "UTC", "MJD USNO", "TAI", "MJD GSFC");
+//     	stateICRF = PositionConvert(4, 1, ts_epoch_tai_mjd_gsfc, stateInEarthFixedFrame);
+//     	
+// 		// Add the current state into the EphemerisVector object
+//     	ephVector.Epoch = ts_epoch_tai_mjd_gsfc;
+//     	If (ICRF_flag == 1);
+//     		ephVector.SetVariableValues({0,1,2}, stateICRF);
+//     	Else;
+// 			ephVector.SetVariableValues({0,1,2}, {pos_x, pos_y, pos_z});
+//     	End;
+//     	
+//     	// Add the EphemerisVector to the Ephemeris 
+// 		convertedEphem.AddVectorData(ephVector);
+//     End;
+//     i++;
+// End;
+// 
+// Put convertedEphem to FFephem ffEphem_output_file;
+For j = 0 to 7 step 1;
+// need other loop going j=0..7
+If (j == 0);
+// ######## STELLA ########
+cpf_input_file = "./cpf/stella.cpf";
+ffEphem_output_file = "./ephemeris/stella.FFEphem";
+convertedEphem.FFEphemProperties.SpacecraftName = "STELLA";
+ElseIf (j == 1);
+// ######## STARLETTE ########
+cpf_input_file = "./cpf/starlette.cpf";
+ffEphem_output_file = "./ephemeris/starlette.FFEphem";
+convertedEphem.FFEphemProperties.SpacecraftName = "STARLETTE";
+ElseIf (j == 2);
+// ######## LAGEOS 1 ########
+cpf_input_file = "./cpf/lageos-1.cpf";
+ffEphem_output_file = "./ephemeris/lageos-1.FFEphem";
+convertedEphem.FFEphemProperties.SpacecraftName = "LAGEOS 1";
+ElseIf (j == 3);
+// ######## LARETS ########
+cpf_input_file = "./cpf/larets.cpf";
+ffEphem_output_file = "./ephemeris/larets.FFEphem";
+convertedEphem.FFEphemProperties.SpacecraftName = "LARETS";
+ElseIf (j == 4);
+// ######## LARES ########
+cpf_input_file = "./cpf/lares.cpf";
+ffEphem_output_file = "./ephemeris/lares.FFEphem";
+convertedEphem.FFEphemProperties.SpacecraftName = "LARES";
+ElseIf (j == 5);
+// ######## AJISAI (EGS) ########
+cpf_input_file = "./cpf/ajisai-(EGS).cpf";
+ffEphem_output_file = "./ephemeris/ajisai-(EGS).FFEphem";
+convertedEphem.FFEphemProperties.SpacecraftName = "AJISAI (EGS)";
+ElseIf (j == 6);
+// ######## COSMOS 1989 (ETALON 1) ########
+cpf_input_file = "./cpf/cosmos-1989-(etalon-1).cpf";
+ffEphem_output_file = "./ephemeris/cosmos-1989-(etalon-1).FFEphem";
+convertedEphem.FFEphemProperties.SpacecraftName = "COSMOS 1989 (ETALON 1)";
+Else;
+// ######## COSMOS 2024 (ETALON 2) ########
+cpf_input_file = "./cpf/cosmos-2024-(etalon-2).cpf";
+ffEphem_output_file = "./ephemeris/cosmos-2024-(etalon-2).FFEphem";
+convertedEphem.FFEphemProperties.SpacecraftName = "COSMOS 2024 (ETALON 2)";
+End;
+
+//Read the contents of the entire file and place each line into an element of "fileContents", process the an write them back to the ephemeris
+numLines = fileContents.ReadFromFile(cpf_input_file);
+
+// iterate through all the lines
+While (i < numLines);
+
+    //Split each line into entries, using spaces as the delimiter
+    fileContents[i].Split(" ",lineContents);
+
+    //Ignore header lines of the file (Headers) and report so far only the position
+    If (lineContents[0] == "10"); // position data
+    	// extract data from cpf file
+        epoch_utc_mjd = StringToFloat(lineContents[2]) + StringToFloat(lineContents[3])/(60*60*24);
+    	ts_epoch_utc_mjd = TimeSpan.FromDays(epoch_utc_mjd);
+    	pos_x = StringToFloat(lineContents[5]) / 1000; // m to km
+    	pos_y = StringToFloat(lineContents[6]) / 1000; // m to km
+    	pos_z = StringToFloat(lineContents[7]) / 1000; // m to km
+    	stateInEarthFixedFrame = {pos_x, pos_y, pos_z};
+    	
+    	// convert data to correct epoch format and position reference frame
+    	ts_epoch_tai_mjd_gsfc = TimeTools.ConvertTime(ts_epoch_utc_mjd, "UTC", "MJD USNO", "TAI", "MJD GSFC");
+    	stateICRF = PositionConvert(4, 1, ts_epoch_tai_mjd_gsfc, stateInEarthFixedFrame);
+    	
+		// Add the current state into the EphemerisVector object
+    	ephVector.Epoch = ts_epoch_tai_mjd_gsfc;
+    	If (ICRF_flag == 1);
+    		ephVector.SetVariableValues({0,1,2}, stateICRF);
+    	Else;
+			ephVector.SetVariableValues({0,1,2}, {pos_x, pos_y, pos_z});
+    	End;
+    	
+    	// Add the EphemerisVector to the Ephemeris 
+		convertedEphem.AddVectorData(ephVector);
+    End;
+
+    i++;
+
+End;
+
+Put convertedEphem to FFephem ffEphem_output_file;
+
+// reset for next ephemeris
+i = 0;
+convertedEphem.ClearEphemeris();
+End;]]></ProjectScript>
+  <ProjectNotes></ProjectNotes>
+</FreeFlyerProjectFile>

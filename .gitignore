@@ -5,9 +5,6 @@
 
 de421.bsp
 
-missionplans/*
-!missionplans
-!missionplans/.gitkeep
 
 *.fits
 *.xlsx
