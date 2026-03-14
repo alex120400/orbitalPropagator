@@ -579,9 +579,9 @@ class APP(tk.Tk):
             while self.telescope.tracking_flag: # stay in loop while tracking
                 if self.telescope.tracking_bit == 1: # only take images while actually tracking and not waiting
                     try:
-                        self.camera.takeSingleImage(self.telescope, exposureTimeMs=800,
+                        self.camera.takeSingleImage(self.telescope, exposureTimeMs=100,
                                                     filePath=fits_path, img_number=image_idx)
-                        sleep(0.2) # reduce to roughly one frame per second
+                        sleep(0.900) # reduce to roughly one frame per second
                     except Exception as e:
                         print(f"There was an error while taking an imgage:\n{str(e)}")
                     finally:

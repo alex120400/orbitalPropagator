@@ -604,6 +604,21 @@ if __name__ == "__main__":
     # args = 74237847.2, "TLE"
     # idx = 6
 
+    # base_folder = r"tracking\\2026Mar13__16_45__120"
+    # hybrid_fits_folder = r"tracking\\2026Mar13__16_45__120\\2\\HYB_SL-14-R-B"
+    # args = 72310763.9, "OD"
+    # idx = 2
+    # hybrid_fits_folder = r"tracking\\2026Mar13__16_45__120\\5\\HYB_NOAA-9"
+    # args = 73859375.0, "TLE"
+    # idx = 5
+    # hybrid_fits_folder = r"tracking\\2026Mar13__16_45__120\\6\\HYB_COSMOS-1992"
+    # args = 74331597.2, "OD"
+    # idx = 6
+    # hybrid_fits_folder = r"tracking\\2026Mar13__16_45__120\\7\\HYB_NOVA-1"
+    # args = 76769097.2, "OD"
+    # idx=7
+
+
 
     # tle_arcsec_offsets, od_arcsec_offsets = get_abs_arcsec_offset_from_folder_for_HybridTracks(hybrid_fits_folder,  *args)
     #
@@ -640,6 +655,17 @@ if __name__ == "__main__":
                 "NOAA 6\nHeight: 771 km\nMax El.: 77°" # "NOAA 6 (11416U)\nAscending Track: TLE\nHeight: 771 km\nMax El.: 77°"
             ],
             "title": "Measurement 2 on Jan. 20. 16:00 - 18:00 UTC"
+        },
+        {
+            "base_dir": "2026Mar13__16_45__120",
+            "folders": ["2", "5", "6", "7"],
+            "labels": [
+                "SL-14 R/B\nHeight: 609 km\nMax El.: 67°",
+                "NOAA 9\nHeight: 833 km\nMax El.: 56°",
+                "COSMOS 1992\nHeight: 770 km\nMax El.: 37°",
+                "NOVA 1\nHeight: 1169 km\nMax El.: 42°"
+            ],
+            "title": "Measurement  on Mar. 13. 16:45 - 18:30 UTC"
         }
     ]
 
