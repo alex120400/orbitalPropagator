@@ -2526,8 +2526,8 @@ Console.Show();]]></FreeFormScript>
 FF_SolarSystem.DefaultEarthOrientationParametersFile = "./Support_Files/earth_orientation_parameters_celestrak.csv";
 
 TimeSpan watchWindow_Timespan; // = TIMESPAN(90 minutes);
-String startTime_String; // = "Jan 17 2026 14:36:00";
-String SpaceCraftName; // = "STARLINK-2052";
+String startTime_String; // = "Mar 15 2026 09:55:00";
+String SpaceCraftName; // = "OBJECT AC";
 
 ApiLabel "Python-Input";
 
@@ -2824,8 +2824,8 @@ EndProcedure;
 FF_SolarSystem.DefaultEarthOrientationParametersFile = "./Support_Files/earth_orientation_parameters_celestrak.csv";
 
 TimeSpan watchWindow_Timespan; // = TIMESPAN(90 minutes);
-String startTime_String; // = "Jan 17 2026 14:36:00";
-String SpaceCraftName; // = "STARLINK-2052";
+String startTime_String; // = "Mar 15 2026 09:55:00";
+String SpaceCraftName; // = "OBJECT AC";
 
 ApiLabel "Python-Input";
 
